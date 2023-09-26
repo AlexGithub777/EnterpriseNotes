@@ -1,0 +1,5 @@
+- modify note
+- delete note
+- on note creation, add FTS text
+- ability to share notes among users
+- simple erd for our database
