@@ -94,7 +94,11 @@
                 {{end}}
               </td>
               <td>
-                <button class="w3-btn w3-teal" onclick="updateTask(this);">
+                <button
+                  class="w3-btn w3-teal"
+                  onclick="updateTask(this);"
+                  data-taskid="{{$note.ID}}"
+                >
                   Modify
                 </button>
                 <button
@@ -175,7 +179,7 @@
           <form class="w3-container" action="/update" method="post">
             <input type="hidden" name="Id" id="taskIdToUpdate" />
             <label class="w3-label">Title</label>
-            <input class="w3-input" type="text" name="Title" required />
+            <input class="w3-input" type="text" name="Title" required value= />
             <label class="w3-label">Type</label>
             <input class="w3-input" type="text" name="NoteType" required />
             <label class="w3-label">Description</label>
@@ -244,7 +248,7 @@
         // Display update form
         editForm.style.display = "block";
         // Get task ID to update
-        var taskId = e.parentNode.parentNode.childNodes[3].innerText;
+        var taskId = e.getAttribute("data-taskid");
         document.getElementById("taskIdToUpdate").value = taskId;
       }
 
