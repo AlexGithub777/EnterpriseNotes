@@ -21,7 +21,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 
     sess := session.Get(r)
     username := "[guest]"
-	//userID := 0
+	
 
     if sess != nil {
         username = sess.CAttr("username").(string)
