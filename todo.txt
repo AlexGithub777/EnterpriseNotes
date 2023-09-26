@@ -1,7 +1,6 @@
-- modify note
-- delete note
-- on note creation, add FTS text
-- ability to share notes among users 
+- modify note - working add autofil
+- on note creation, add FTS text - add search box for notes, ability to search and count word snippets in a note
+- ability to share notes among users - 
 - simple erd for our database
 - get data import working
 - update UI

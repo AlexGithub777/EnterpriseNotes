@@ -143,7 +143,7 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     var note Note
-    note.ID, _ = strconv.Atoi(r.FormValue("ID"))
+    note.ID, _ = strconv.Atoi(r.FormValue("Id"))
     note.Title = r.FormValue("Title")
     note.NoteType = r.FormValue("NoteType")
     note.Description = r.FormValue("Description")
