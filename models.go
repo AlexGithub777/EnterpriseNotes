@@ -85,6 +85,7 @@ func (a *App) importData() error {
 		user_id INTEGER,
 		note_id INTEGER,
 		PRIMARY KEY (user_id, note_id),
+		privileges TEXT,
 		
 	);
 

@@ -120,6 +120,7 @@ func (a *App) Initialize() {
     createUserSharesTable := `CREATE TABLE IF NOT EXISTS user_shares (
         user_id INTEGER,
         note_id INTEGER,
+		privileges TEXT,
         PRIMARY KEY (user_id, note_id),
         FOREIGN KEY (user_id) REFERENCES users (id),
         FOREIGN KEY (note_id) REFERENCES notes (id)
