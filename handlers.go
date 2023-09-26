@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -20,12 +21,9 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 
     sess := session.Get(r)
     username := "[guest]"
-	//userID := 0
 
     if sess != nil {
         username = sess.CAttr("username").(string)
-		
-		
     }
 
     if r.Method != http.MethodGet {
@@ -40,6 +38,14 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // Get the list of all users
+    allUsers, err := a.getAllUsers()
+    if err != nil {
+        // Handle the error appropriately (e.g., log it or show an error page)
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+
     var funcMap = template.FuncMap{
         "addOne": func(i int) int {
             return i + 1
@@ -49,9 +55,11 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     data := struct {
         Username string
         Notes    []Note
+        AllUsers []User // Add the AllUsers field to the data struct
     }{
         Username: username,
         Notes:    notes,
+        AllUsers: allUsers, // Pass the allUsers slice to the template
     }
 
     t, err := template.New("list.html").Funcs(funcMap).ParseFiles("tmpl/list.html")
@@ -69,6 +77,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "text/html; charset=UTF-8")
     buf.WriteTo(w)
 }
+
 
 
 func (a *App) retrieveNotes(username string) ([]Note, error) {
@@ -101,6 +110,31 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
     }
 
     return notes, nil
+}
+
+// function to get all users
+func (a *App) getAllUsers() ([]User, error) {
+    var users []User
+
+    rows, err := a.db.Query("SELECT username FROM users")
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var user User
+        if err := rows.Scan(&user.Username); err != nil {
+            return nil, err
+        }
+        users = append(users, user)
+    }
+
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return users, nil
 }
 
 
@@ -190,7 +224,81 @@ func (a *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
 
+func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
+    a.isAuthenticated(w, r)
+
+    if r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    // Extract the shared user's username and privileges from the form
+    sharedUsername := r.FormValue("SharedUsername")
+    privileges := r.FormValue("Privileges")
+    noteID := r.FormValue("Id")
+	fmt.Printf("%s\n", noteID) //n	NOT GETTING PASSED
+	fmt.Printf("%s\n", privileges)
+	fmt.Printf("%s\n", sharedUsername)
+
+    // Check if the shared user exists in the users table by username
+    var sharedUserID string // Change the type to string
+    err := a.db.QueryRow("SELECT username FROM users WHERE username = $1", sharedUsername).Scan(&sharedUserID)
+    if err != nil {
+        // Handle the case where the shared user does not exist
+        // You can display an error message or redirect as needed
+        http.Error(w, "Invalid shared user", http.StatusBadRequest)
+        return
+    }
+
+    // Check if the note with the given ID exists
+    var noteExists bool
+    err = a.db.QueryRow("SELECT EXISTS(SELECT 1 FROM notes WHERE id = $1)", noteID).Scan(&noteExists)
+	fmt.Printf("%t\n", noteExists)
+    if err != nil {
+        a.checkInternalServerError(err, w)
+        return
+    }
+
+    if !noteExists {
+        http.Error(w, "Note does not exist", http.StatusBadRequest)
+        return
+    }
+
+    
+
+    // Insert a new row into user_shares table to link the shared user with the note
+    _, err = a.db.Exec(`
+        INSERT INTO user_shares (note_id, username , privileges)
+        VALUES ($1, $2, $3)
+    `,noteID, sharedUsername, privileges)
+    if err != nil {
+        a.checkInternalServerError(err, w)
+        return
+    }
+
+    // Provide feedback to the user (e.g., "Note shared successfully")
+
+    // Redirect to an appropriate page
+    http.Redirect(w, r, "/list", http.StatusSeeOther)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	a.isAuthenticated(w, r)
 	http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
+

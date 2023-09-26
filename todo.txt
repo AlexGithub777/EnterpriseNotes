@@ -1,6 +1,6 @@
 - modify note - All working, add autofil
 - on note Create and update, add/update FTS text - add search box for notes, ability to search and count word snippets in a note - modify handlers to add, all fields to db
-- ability to share notes among users - 
+- ability to share notes among users - working, need to add UI for sharednotes, disallow owner sharing note with self
 - simple erd for our database
 - get data import working
 - update UI

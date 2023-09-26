@@ -114,6 +114,13 @@
                                 >
                                     Delete
                                 </button>
+                                <button
+                                    class="w3-btn w3-blue"
+                                    onclick="shareTask(this)"
+                                    share-noteid="{{$note.ID}}"
+                                >
+                                    Share
+                                </button>
                             </td>
                         </tr>
                         {{end}}
@@ -335,6 +342,72 @@
             </div>
         </div>
 
+        <!-- Share Modal -->
+        <div class="w3-container">
+            <div id="share-form" class="w3-modal">
+                <div
+                    class="w3-modal-content w3-card-8 w3-animate-zoom"
+                    style="max-width: 400px"
+                >
+                    <!-- Head -->
+                    <div class="w3-container w3-teal">
+                        <h2>Share Note</h2>
+                        <span
+                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                            onclick="document.getElementById('share-form').style.display='none'"
+                            >&times;</span
+                        >
+                    </div>
+
+                    <!-- Share Form -->
+                    <form class="w3-container" action="/share" method="post">
+                        <input type="hidden" id="taskIdToShare" name="Id" />
+
+                        <label class="w3-label">Select User</label>
+                        <select
+                            class="w3-select"
+                            name="SharedUsername"
+                            required
+                        >
+                            <!-- Generate options from user data -->
+                            {{range $user := .AllUsers}}
+                            <option value="{{$user.Username}}">
+                                {{$user.Username}}
+                            </option>
+                            {{end}}
+                        </select>
+
+                        <label class="w3-label">Privileges</label>
+                        <div class="w3-container">
+                            <input
+                                class="w3-radio"
+                                type="radio"
+                                name="Privileges"
+                                value="editor"
+                                checked
+                            />
+                            <label class="w3-validate">Editor</label>
+
+                            <input
+                                class="w3-radio"
+                                type="radio"
+                                name="Privileges"
+                                value="viewer"
+                            />
+                            <label class="w3-validate">Viewer</label>
+                        </div>
+
+                        <button
+                            class="w3-btn w3-teal w3-margin-top"
+                            type="submit"
+                        >
+                            Share
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <script>
             function updateTask(e) {
                 var editForm = document.getElementById("edit-form");
@@ -358,6 +431,21 @@
                 // Now you have the noteID as an integer, and you can use it as needed
                 // For example, you can set it as the value of an input field
                 document.getElementById("taskIdToDelete").value = noteID;
+            }
+
+            function shareTask(e) {
+                var shareForm = document.getElementById("share-form");
+                shareForm.style.display = "block";
+
+                // Get task ID to delete from the data attribute
+                var taskId = e.getAttribute("share-noteid");
+
+                // Assuming taskId is a string, you can convert it to an integer using parseInt
+                var noteID = parseInt(taskId, 10);
+
+                // Now you have the noteID as an integer, and you can use it as needed
+                // For example, you can set it as the value of an input field
+                document.getElementById("taskIdToShare").value = noteID;
             }
         </script>
     </body>
