@@ -133,11 +133,11 @@ func (a *App) Initialize() {
     log.Println("User Shares table checked/created successfully")
 
 	//check data import status
-	_, err = os.Stat("./imported")
-	if os.IsNotExist(err) {
-		log.Println("--- Importing demo data")
-		a.importData()
-	}
+	//_, err = os.Stat("./imported")
+	//if os.IsNotExist(err) {
+	//	log.Println("--- Importing demo data")
+	//	a.importData()
+	
 
 	
 
