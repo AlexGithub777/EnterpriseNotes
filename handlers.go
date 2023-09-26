@@ -25,7 +25,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 
     if sess != nil {
         username = sess.CAttr("username").(string)
-		fmt.Printf(username)
+		
 		
     }
 
@@ -73,8 +73,6 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 
 
 func (a *App) retrieveNotes(username string) ([]Note, error) {
-	
-	fmt.Printf("The username is %s", username)
     rows, err := a.db.Query("SELECT * FROM notes WHERE owner = $1 ORDER BY id", username)
     if err != nil {
         return nil, err
@@ -170,11 +168,12 @@ func (a *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	a.isAuthenticated(w, r)
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+        fmt.Printf("gi")
 		return
 	}
 
-	noteID, _ := strconv.Atoi(r.FormValue("ID"))
-
+	noteID, _ := strconv.Atoi(r.FormValue("Id"))
+    fmt.Printf("%d", noteID)
 	// Delete from the database
 	_, err := a.db.Exec("DELETE FROM notes WHERE id=$1", noteID)
 	a.checkInternalServerError(err, w)
