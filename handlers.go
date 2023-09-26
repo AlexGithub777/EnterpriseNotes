@@ -173,7 +173,7 @@ func (a *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	noteID, _ := strconv.Atoi(r.FormValue("ID"))
+	noteID, _ := strconv.Atoi(r.FormValue("Id"))
 
 	// Delete from the database
 	_, err := a.db.Exec("DELETE FROM notes WHERE id=$1", noteID)
