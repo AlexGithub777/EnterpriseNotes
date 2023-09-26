@@ -116,17 +116,23 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var note Note
+
+    var note Note
 	note.Title = r.FormValue("Title")
 	note.NoteType = r.FormValue("NoteType")
 	note.Description = r.FormValue("Description")
 	note.Owner = username // Set the owner ID to the logged-in user's ID (adjust as needed) !!! set to userID
+    note.TaskCompletionDate.String = r.FormValue("TaskCompletionDate")
+    note.TaskCompletionTime.String = r.FormValue("TaskCompletionTime")
+    note.NoteStatus.String = r.FormValue("NoteStatus")
+    note.NoteDelegation.String = r.FormValue("NoteDelegation")
+
 
 	// Save to database
 	_, err := a.db.Exec(`
-		INSERT INTO notes (title, noteType, description, owner)
-		VALUES($1, $2, $3, $4)
-	`, note.Title, note.NoteType, note.Description, note.Owner)
+		INSERT INTO notes (title, noteType, description, TaskCompletionDate, TaskCompletionTime, NoteStatus, NoteDelegation, owner)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+	`, note.Title, note.NoteType, note.Description, note.TaskCompletionDate.String, note.TaskCompletionTime.String, note.NoteStatus.String, note.NoteDelegation.String, note.Owner)
 	a.checkInternalServerError(err, w)
 
 	

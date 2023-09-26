@@ -69,10 +69,30 @@
               <td>{{$note.NoteType}}</td>
               <td>{{$note.Description}}</td>
               <td>{{$note.NoteCreated}}</td>
-              <td>{{$note.TaskCompletionTime}}</td>
-              <td>{{$note.TaskCompletionDate}}</td>
-              <td>{{$note.NoteStatus}}</td>
-              <td>{{$note.NoteDelegation}}</td>
+              <td>
+                {{if $note.TaskCompletionTime.Valid}}
+                {{$note.TaskCompletionTime.String}} {{else}} N/A
+                <!-- or any other placeholder value you prefer -->
+                {{end}}
+              </td>
+              <td>
+                {{if $note.TaskCompletionDate.Valid}}
+                {{$note.TaskCompletionDate.String}} {{else}} N/A
+                <!-- or any other placeholder value you prefer -->
+                {{end}}
+              </td>
+              <td>
+                {{if $note.NoteStatus.Valid}} {{$note.NoteStatus.String}}
+                {{else}} N/A
+                <!-- or any other placeholder value you prefer -->
+                {{end}}
+              </td>
+              <td>
+                {{if $note.NoteDelegation.Valid}}
+                {{$note.NoteDelegation.String}} {{else}} N/A
+                <!-- or any other placeholder value you prefer -->
+                {{end}}
+              </td>
               <td>
                 <button class="w3-btn w3-teal" onclick="updateTask(this);">
                   Modify
