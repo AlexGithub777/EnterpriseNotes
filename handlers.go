@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -21,7 +20,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 
     sess := session.Get(r)
     username := "[guest]"
-	
+	//userID := 0
 
     if sess != nil {
         username = sess.CAttr("username").(string)
@@ -73,6 +72,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 
 
 func (a *App) retrieveNotes(username string) ([]Note, error) {
+	
     rows, err := a.db.Query("SELECT * FROM notes WHERE owner = $1 ORDER BY id", username)
     if err != nil {
         return nil, err
@@ -103,17 +103,6 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
     return notes, nil
 }
 
-func (a *App) getNoteByID(id int) (Note, error) {
-    var note Note
-    err := a.db.QueryRow("SELECT id, title, noteType, description, task_completion_time, task_completion_date, note_status, note_delegation FROM notes WHERE id = $1", id).
-        Scan(&note.ID, &note.Title, &note.NoteType, &note.Description, &note.TaskCompletionTime, &note.TaskCompletionDate, &note.NoteStatus, &note.NoteDelegation)
-
-    if err != nil {
-        return Note{}, err
-    }
-
-    return note, nil
-}
 
 
 func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
@@ -164,56 +153,36 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
     note.Title = r.FormValue("Title")
     note.NoteType = r.FormValue("NoteType")
     note.Description = r.FormValue("Description")
-    note.TaskCompletionTime.String = r.FormValue("TaskCompletionTime")
+	note.TaskCompletionTime.String = r.FormValue("TaskCompletionTime")
     note.TaskCompletionDate.String = r.FormValue("TaskCompletionDate")
     note.NoteStatus.String = r.FormValue("NoteStatus")
     note.NoteDelegation.String = r.FormValue("NoteDelegation")
 
-    // Update the database with all fields
+    // Update the database
     _, err := a.db.Exec(`
         UPDATE notes SET title=$1, noteType=$2, description=$3,
-        task_completion_time=$4, task_completion_date=$5, note_status=$6, note_delegation=$7
+        taskcompletiontime=$4, taskcompletiondate=$5, notestatus=$6, notedelegation=$7
         WHERE id=$8
-    `, note.Title, note.NoteType, note.Description, note.TaskCompletionTime,
-    note.TaskCompletionDate, note.NoteStatus, note.NoteDelegation, note.ID)
+    `, note.Title, note.NoteType, note.Description, note.TaskCompletionTime.String,
+    note.TaskCompletionDate.String, note.NoteStatus.String, note.NoteDelegation.String, note.ID)
     if err != nil {
         a.checkInternalServerError(err, w)
         return
     }
 
-    // Fetch the updated note data from the database
-    updatedNote, err := a.getNoteByID(note.ID)
-    if err != nil {
-        a.checkInternalServerError(err, w)
-        return
-    }
-
-    // Render the template with the updated note data
-    tmpl, err := template.New("edit.html").ParseFiles("tmpl/edit.html")
-    if err != nil {
-        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-        return
-    }
-
-    if err := tmpl.Execute(w, updatedNote); err != nil {
-        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-        return
-    }
+    // Redirect back to the list page or another appropriate page
+    http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
-
-
 
 
 func (a *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	a.isAuthenticated(w, r)
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
-        fmt.Printf("gi")
 		return
 	}
 
 	noteID, _ := strconv.Atoi(r.FormValue("Id"))
-    fmt.Printf("%d", noteID)
 	// Delete from the database
 	_, err := a.db.Exec("DELETE FROM notes WHERE id=$1", noteID)
 	a.checkInternalServerError(err, w)
