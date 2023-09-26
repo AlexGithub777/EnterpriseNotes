@@ -4,4 +4,4 @@
 - ability to share notes among users 
 - simple erd for our database
 - get data import working
-update UI
+- update UI
