@@ -12,6 +12,7 @@ import (
 type UserShare struct {
 	UserID int `json:"user_id"`
 	NoteID int `json:"note_id"`
+	privileges string `json: privileges`
 }
 
 type Note struct {

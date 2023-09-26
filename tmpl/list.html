@@ -1,302 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="stylesheet" href="/statics/ionicons/css/w3.css" />
-        <link rel="stylesheet" href="/statics/ionicons/css/ionicons.min.css" />
-        <title>Task Manager</title>
-        <style>
-            .hoverbtn:hover {
-                font-weight: bold;
-                opacity: 0.4;
-            }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/statics/ionicons/css/w3.css" />
+    <link rel="stylesheet" href="/statics/ionicons/css/ionicons.min.css" />
+    <title>Task Manager</title>
+    <style>
+      .hoverbtn:hover {
+        font-weight: bold;
+        opacity: 0.4;
+      }
 
-            a {
-                text-decoration: none;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="w3-row-padding">
-            <div class="w3-card-2 w3-margin-top">
-                <header class="w3-container w3-center w3-teal">
-                    <div class="w3-row">
-                        <div class="w3-half">
-                            <h3 class="w3-right">Task List</h3>
-                        </div>
-                        <div class="w3-half w3-text-right">
-                            <div class="w3-right">
-                                <h3 class="w3-left w3-margin-right">
-                                    Logged in as {{.Username}}
-                                </h3>
-                                <a
-                                    href="#"
-                                    onclick="document.getElementById('create-form').style.display='block'"
-                                >
-                                    <i
-                                        class="ion ion-ios-plus-outline w3-xxlarge hoverbtn"
-                                    ></i>
-                                </a>
-                                <a href="/logout">
-                                    <i
-                                        class="ion ion-log-out w3-xxlarge hoverbtn"
-                                    ></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </header>
-
-                <table
-                    class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
-                >
-                    <thead>
-                        <tr>
-                            <th>Index</th>
-                            <th>ID</th>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Description</th>
-                            <th>Created</th>
-                            <th>Completion Time</th>
-                            <th>Completion Date</th>
-                            <th>Status</th>
-                            <th>Delegation</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{range $index, $note := .Notes}}
-                        <tr>
-                            <td>{{addOne $index}}</td>
-                            <td>{{$note.ID}}</td>
-                            <td>{{$note.Title}}</td>
-                            <td>{{$note.NoteType}}</td>
-                            <td>{{$note.Description}}</td>
-                            <td>{{$note.NoteCreated}}</td>
-                            <td>{{$note.TaskCompletionTime}}</td>
-                            <td>{{$note.TaskCompletionDate}}</td>
-                            <td>{{$note.NoteStatus}}</td>
-                            <td>{{$note.NoteDelegation}}</td>
-                            <td>
-                                <button
-                                    class="w3-btn w3-teal"
-                                    onclick="updateTask(this);"
-                                >
-                                    Modify
-                                </button>
-                                <button
-                                    class="w3-btn w3-red"
-                                    onclick="deleteTask(this)"
-                                >
-                                    Delete
-                                </button>
-                            </td>
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
+      a {
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="w3-row-padding">
+      <div class="w3-card-2 w3-margin-top">
+        <header class="w3-container w3-center w3-teal">
+          <div class="w3-row">
+            <div class="w3-half">
+              <h3 class="w3-right">Task List</h3>
             </div>
-        </div>
-
-        <!-- Create Modals -->
-        <div class="w3-container">
-            <div id="create-form" class="w3-modal">
-                <div
-                    class="w3-modal-content w3-card-8 w3-animate-zoom"
-                    style="max-width: 600px"
+            <div class="w3-half w3-text-right">
+              <div class="w3-right">
+                <h3 class="w3-left w3-margin-right">
+                  Logged in as {{.Username}}
+                </h3>
+                <a
+                  href="#"
+                  onclick="document.getElementById('create-form').style.display='block'"
                 >
-                    <!-- head -->
-                    <div class="w3-container w3-teal">
-                        <h2>Create a New Task</h2>
-                        <span
-                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-                            onclick="document.getElementById('create-form').style.display='none'"
-                            >&times;</span
-                        >
-                    </div>
-
-                    <form class="w3-container" action="/create" method="post">
-                        <label class="w3-label">Title</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="Title"
-                            required
-                        />
-                        <label class="w3-label">Type</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="NoteType"
-                            required
-                        />
-                        <label class="w3-label">Description</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="Description"
-                            required
-                        />
-                        <label class="w3-label">Completion Time</label>
-                        <input
-                            class="w3-input"
-                            type="time"
-                            name="TaskCompletionTime"
-                        />
-                        <label class="w3-label">Completion Date</label>
-                        <input
-                            class="w3-input"
-                            type="date"
-                            name="TaskCompletionDate"
-                        />
-                        <label class="w3-label">Status</label>
-                        <input class="w3-input" type="text" name="NoteStatus" />
-                        <label class="w3-label">Delegation</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="NoteDelegation"
-                        />
-                        <button
-                            class="w3-btn w3-teal w3-margin-top w3-margin-bottom w3-right"
-                            type="submit"
-                        >
-                            Create
-                        </button>
-                    </form>
-                </div>
+                  <i class="ion ion-ios-plus-outline w3-xxlarge hoverbtn"></i>
+                </a>
+                <a href="/logout">
+                  <i class="ion ion-log-out w3-xxlarge hoverbtn"></i>
+                </a>
+              </div>
             </div>
-        </div>
+          </div>
+        </header>
 
-        <!-- Edit Modals -->
-        <div class="w3-container">
-            <div id="edit-form" class="w3-modal">
-                <div
-                    class="w3-modal-content w3-card-8 w3-animate-zoom"
-                    style="max-width: 600px"
+        <table class="w3-table w3-centered w3-border w3-bordered w3-hoverable">
+          <thead>
+            <tr>
+              <th>Index</th>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Created</th>
+              <th>Completion Time</th>
+              <th>Completion Date</th>
+              <th>Status</th>
+              <th>Delegation</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range $index, $note := .Notes}}
+            <tr>
+              <td>{{addOne $index}}</td>
+              <td>{{$note.ID}}</td>
+              <td>{{$note.Title}}</td>
+              <td>{{$note.NoteType}}</td>
+              <td>{{$note.Description}}</td>
+              <td>{{$note.NoteCreated}}</td>
+              <td>{{$note.TaskCompletionTime}}</td>
+              <td>{{$note.TaskCompletionDate}}</td>
+              <td>{{$note.NoteStatus}}</td>
+              <td>{{$note.NoteDelegation}}</td>
+              <td>
+                <button class="w3-btn w3-teal" onclick="updateTask(this);">
+                  Modify
+                </button>
+                <button
+                  class="w3-btn w3-red"
+                  onclick="deleteTask(this)"
+                  data-taskid="{{$note.ID}}"
                 >
-                    <!-- head -->
-                    <div class="w3-container w3-teal">
-                        <h2>Edit Task</h2>
-                        <span
-                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-                            onclick="document.getElementById('edit-form').style.display='none'"
-                            >&times;</span
-                        >
-                    </div>
+                  Delete
+                </button>
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-                    <form class="w3-container" action="/update" method="post">
-                        <input type="hidden" name="Id" id="taskIdToUpdate" />
-                        <label class="w3-label">Title</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="Title"
-                            required
-                        />
-                        <label class="w3-label">Type</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="NoteType"
-                            required
-                        />
-                        <label class="w3-label">Description</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="Description"
-                            required
-                        />
-                        <label class="w3-label">Completion Time</label>
-                        <input
-                            class="w3-input"
-                            type="time"
-                            name="TaskCompletionTime"
-                        />
-                        <label class="w3-label">Completion Date</label>
-                        <input
-                            class="w3-input"
-                            type="date"
-                            name="TaskCompletionDate"
-                        />
-                        <label class="w3-label">Status</label>
-                        <input class="w3-input" type="text" name="NoteStatus" />
-                        <label class="w3-label">Delegation</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="NoteDelegation"
-                        />
-                        <button
-                            class="w3-btn w3-teal w3-margin-top w3-margin-bottom w3-right"
-                            type="submit"
-                        >
-                            Save
-                        </button>
-                    </form>
-                </div>
-            </div>
+    <!-- Create Modals -->
+    <div class="w3-container">
+      <div id="create-form" class="w3-modal">
+        <div
+          class="w3-modal-content w3-card-8 w3-animate-zoom"
+          style="max-width: 600px"
+        >
+          <!-- head -->
+          <div class="w3-container w3-teal">
+            <h2>Create a New Task</h2>
+            <span
+              class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+              onclick="document.getElementById('create-form').style.display='none'"
+              >&times;</span
+            >
+          </div>
+
+          <form class="w3-container" action="/create" method="post">
+            <label class="w3-label">Title</label>
+            <input class="w3-input" type="text" name="Title" required />
+            <label class="w3-label">Type</label>
+            <input class="w3-input" type="text" name="NoteType" required />
+            <label class="w3-label">Description</label>
+            <input class="w3-input" type="text" name="Description" required />
+            <label class="w3-label">Completion Time</label>
+            <input class="w3-input" type="time" name="TaskCompletionTime" />
+            <label class="w3-label">Completion Date</label>
+            <input class="w3-input" type="date" name="TaskCompletionDate" />
+            <label class="w3-label">Status</label>
+            <input class="w3-input" type="text" name="NoteStatus" />
+            <label class="w3-label">Delegation</label>
+            <input class="w3-input" type="text" name="NoteDelegation" />
+            <button
+              class="w3-btn w3-teal w3-margin-top w3-margin-bottom w3-right"
+              type="submit"
+            >
+              Create
+            </button>
+          </form>
         </div>
+      </div>
+    </div>
 
-        <!-- Delete Modals -->
-        <div class="w3-container">
-            <div id="delete-form" class="w3-modal">
-                <div
-                    class="w3-modal-content w3-card-8 w3-animate-zoom"
-                    style="max-width: 600px"
-                >
-                    <!-- head -->
-                    <div class="w3-container w3-teal">
-                        <h2>Are you sure?</h2>
-                        <span
-                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-                            onclick="document.getElementById('delete-form').style.display='none'"
-                            >&times;</span
-                        >
-                    </div>
+    <!-- Edit Modals -->
+    <div class="w3-container">
+      <div id="edit-form" class="w3-modal">
+        <div
+          class="w3-modal-content w3-card-8 w3-animate-zoom"
+          style="max-width: 600px"
+        >
+          <!-- head -->
+          <div class="w3-container w3-teal">
+            <h2>Edit Task</h2>
+            <span
+              class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+              onclick="document.getElementById('edit-form').style.display='none'"
+              >&times;</span
+            >
+          </div>
 
-                    <form class="w3-container" action="/delete" method="post">
-                        <input type="hidden" name="Id" id="taskIdToDelete" />
-                        <div class="w3-center">
-                            <button
-                                class="w3-btn w3-red w3-margin-top w3-margin-bottom"
-                                type="submit"
-                            >
-                                Delete
-                            </button>
-                            <button
-                                type="button"
-                                class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
-                                onclick="document.getElementById('delete-form').style.display='none'"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+          <form class="w3-container" action="/update" method="post">
+            <input type="hidden" name="Id" id="taskIdToUpdate" />
+            <label class="w3-label">Title</label>
+            <input class="w3-input" type="text" name="Title" required />
+            <label class="w3-label">Type</label>
+            <input class="w3-input" type="text" name="NoteType" required />
+            <label class="w3-label">Description</label>
+            <input class="w3-input" type="text" name="Description" required />
+            <label class="w3-label">Completion Time</label>
+            <input class="w3-input" type="time" name="TaskCompletionTime" />
+            <label class="w3-label">Completion Date</label>
+            <input class="w3-input" type="date" name="TaskCompletionDate" />
+            <label class="w3-label">Status</label>
+            <input class="w3-input" type="text" name="NoteStatus" />
+            <label class="w3-label">Delegation</label>
+            <input class="w3-input" type="text" name="NoteDelegation" />
+            <button
+              class="w3-btn w3-teal w3-margin-top w3-margin-bottom w3-right"
+              type="submit"
+            >
+              Save
+            </button>
+          </form>
         </div>
+      </div>
+    </div>
 
-        <script>
-            function updateTask(e) {
-                var editForm = document.getElementById("edit-form");
-                // Display update form
-                editForm.style.display = "block";
-                // Get task ID to update
-                var taskId = e.parentNode.parentNode.childNodes[3].innerText;
-                document.getElementById("taskIdToUpdate").value = taskId;
-            }
+    <!-- Delete Modals -->
+    <div class="w3-container">
+      <div id="delete-form" class="w3-modal">
+        <div
+          class="w3-modal-content w3-card-8 w3-animate-zoom"
+          style="max-width: 600px"
+        >
+          <!-- head -->
+          <div class="w3-container w3-teal">
+            <h2>Are you sure?</h2>
+            <span
+              class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+              onclick="document.getElementById('delete-form').style.display='none'"
+              >&times;</span
+            >
+          </div>
 
-            function deleteTask(e) {
-                var deleteForm = document.getElementById("delete-form");
-                deleteForm.style.display = "block";
-                // Get task ID to delete
-                var taskId = e.parentNode.parentNode.childNodes[3].innerText;
-                document.getElementById("taskIdToDelete").value = taskId;
-            }
-        </script>
-    </body>
+          <form class="w3-container" action="/delete" method="post">
+            <input type="hidden" name="Id" id="taskIdToDelete" />
+            <div class="w3-center">
+              <button
+                class="w3-btn w3-red w3-margin-top w3-margin-bottom"
+                type="submit"
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                onclick="document.getElementById('delete-form').style.display='none'"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function updateTask(e) {
+        var editForm = document.getElementById("edit-form");
+        // Display update form
+        editForm.style.display = "block";
+        // Get task ID to update
+        var taskId = e.parentNode.parentNode.childNodes[3].innerText;
+        document.getElementById("taskIdToUpdate").value = taskId;
+      }
+
+      function deleteTask(e) {
+        var deleteForm = document.getElementById("delete-form");
+        deleteForm.style.display = "block";
+
+        // Get task ID to delete from the data attribute
+        var taskId = e.getAttribute("data-taskid");
+
+        // Assuming taskId is a string, you can convert it to an integer using parseInt
+        var noteID = parseInt(taskId, 10);
+
+        // Now you have the noteID as an integer, and you can use it as needed
+        // For example, you can set it as the value of an input field
+        document.getElementById("taskIdToDelete").value = noteID;
+      }
+    </script>
+  </body>
 </html>
