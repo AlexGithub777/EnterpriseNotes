@@ -1,19 +1,31 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/csv"
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
-type Cost struct {
-	Id             int    `json:"id"`
-	ElectricAmount int    `json:"electric_amount"`
-	ElectricPrice  int    `json:"electric_price"`
-	WaterAmount    int    `json:"water_amount"`
-	WaterPrice     int    `json:"water_price"`
-	CheckedDate    string `json:"checked_date"`
+type UserShare struct {
+	UserID int `json:"user_id"`
+	NoteID int `json:"note_id"`
+}
+
+type Note struct {
+	ID                 int    `json:"id"`
+	Title              string `json:"title"`
+	NoteType           string `json:"note_type"`
+	Description        string `json:"description"`
+	NoteCreated        time.Time `json:"note_created"`
+	TaskCompletionTime sql.NullString `json:"task_completion_time"`
+	TaskCompletionDate sql.NullString `json:"task_completion_date"`
+	NoteStatus         sql.NullString `json:"note_status"`
+	NoteDelegation     sql.NullString `json:"note_delegation"`
+	Owner              string    `json:"owner"`
+	FTSText            sql.NullString `json:"fts_text"`
 }
 
 type User struct {
@@ -34,7 +46,7 @@ func readData(fileName string) ([][]string, error) {
 
 	r := csv.NewReader(f)
 
-	// skip first line as this is the CSV header
+	// Skip the first line as it is the CSV header
 	if _, err := r.Read(); err != nil {
 		return [][]string{}, err
 	}
@@ -48,103 +60,153 @@ func readData(fileName string) ([][]string, error) {
 	return records, nil
 }
 
-// import the JSON data into a collection
 func (a *App) importData() error {
 	log.Printf("Creating tables...")
+
 	// Create table as required, along with attribute constraints
-	sql := `DROP TABLE IF EXISTS "cost";
-	CREATE TABLE "cost" (
-		id INTEGER PRIMARY KEY NOT NULL,
-		electric_amount INTEGER,
-		electric_price INTEGER,
-		water_amount INTEGER,
-		water_price INTEGER,
-		checked_date DATE
-	);`
+	sql := `
+	CREATE TABLE IF NOT EXISTS "notes" (
+		id SERIAL PRIMARY KEY NOT NULL,
+		title TEXT NOT NULL,
+		noteType TEXT NOT NULL,
+		description TEXT NOT NULL,
+		noteCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		taskCompletionTime TIME,
+		taskCompletionDate DATE,
+		noteStatus TEXT,
+		noteDelegation TEXT,
+		owner INTEGER,
+		fts_text tsvector
+		
+	);
+
+	
+	CREATE TABLE IF NOT EXISTS "user_shares" (
+		user_id INTEGER,
+		note_id INTEGER,
+		PRIMARY KEY (user_id, note_id),
+		
+	);
+
+	
+	CREATE TABLE IF NOT EXISTS "users" (
+		id SERIAL PRIMARY KEY NOT NULL,
+		username TEXT UNIQUE NOT NULL,
+		password TEXT NOT NULL,
+		role INTEGER NOT NULL
+	);
+	`
+
 	_, err := a.db.Exec(sql)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Table cost table created.")
-
-	sql = `DROP TABLE IF EXISTS "users";
-	CREATE TABLE "users" (
-		id SERIAL PRIMARY KEY NOT NULL,
-		username VARCHAR(255) NOT NULL,
-		password VARCHAR(255) NOT NULL,
-		role INTEGER DEFAULT 2 NOT NULL
-	);
-	CREATE UNIQUE INDEX users_by_id ON users (id);`
-	_, err = a.db.Exec(sql)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Table users created.")
+	log.Printf("Tables notes,user_shares and users created.")
 
 	log.Printf("Inserting data...")
 
-	//prepare the cost insert query
-	stmt, err := a.db.Prepare("INSERT INTO cost VALUES($1,$2,$3,$4,$5,$6)")
+	// Prepare the notes insert query
+	notesStmt, err := a.db.Prepare("INSERT INTO notes (title, noteType, description, owner) VALUES($1,$2,$3,$4)")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// open the CSV file for importing in PG database
-	data, err := readData("data/costs.csv")
+	// Prepare the user_shares insert query
+	userSharesStmt, err := a.db.Prepare("INSERT INTO user_shares (user_id, note_id) VALUES($1,$2)")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var c Cost
-	// prepare the SQL for multiple inserts
-	for _, data := range data {
-		c.Id, _ = strconv.Atoi(data[0])
-		c.ElectricAmount, _ = strconv.Atoi(data[1])
-		c.ElectricPrice, _ = strconv.Atoi(data[2])
-		c.WaterAmount, _ = strconv.Atoi(data[3])
-		c.WaterPrice, _ = strconv.Atoi(data[4])
-		c.CheckedDate = data[5]
+	// Prepare the users insert query
+	usersStmt, err := a.db.Prepare("INSERT INTO users (username, password, role) VALUES($1,$2,$3)")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		_, err := stmt.Exec(c.Id, c.ElectricAmount, c.ElectricPrice, c.WaterAmount, c.WaterPrice, c.CheckedDate)
+	defer usersStmt.Close()
+
+	// Open the CSV file for importing in PG database
+	notesData, err := readData("data/notes.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var n Note
+	// Prepare the SQL for multiple inserts
+	for _, data := range notesData {
+		n.Title = data[0]
+		n.NoteType = data[1]
+		n.Description = data[2]
+		n.Owner = data[3]
+
+		_, err := notesStmt.Exec(n.Title, n.NoteType, n.Description, n.Owner)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	//prepare the users insert query
-	stmt, err = a.db.Prepare("INSERT INTO users VALUES($1,$2,$3,$4)")
+	// Open the CSV file for importing in PG database
+	noteSharedData, err := readData("data/user_shares.csv") // Declare noteSharedData
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// open the CSV file for importing in PG database
-	data, err = readData("data/users.csv")
-	if err != nil {
-		log.Fatal(err)
-	}
+	var us UserShare
+	// Prepare the SQL for multiple inserts
+	for _, data := range noteSharedData {
+		us.UserID, _ = strconv.Atoi(data[0])
+		us.NoteID, _ = strconv.Atoi(data[1])
 
-	var u User
-	// prepare the SQL for multiple inserts
-	for _, data := range data {
-		u.Id, _ = strconv.Atoi(data[0])
-		u.Username = data[1]
-		u.Password = data[2]
-		u.Role, _ = strconv.Atoi(data[3])
-		_, err := stmt.Exec(u.Id, u.Username, u.Password, u.Role)
-
+		_, err := userSharesStmt.Exec(us.UserID, us.NoteID)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	// create temp file to notify data imported
-	//can use database directly but this is an example
-	// https://golangbyexample.com/touch-file-golang/
+	// Open the CSV file for importing in PG database
+	userData, err := readData("data/users.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var user User
+	// Prepare the SQL for multiple inserts
+	for _, data := range userData {
+		userID, err := strconv.Atoi(data[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		user.Id = userID
+		user.Username = data[1]
+		user.Password = data[2]
+		roleInt, err := strconv.Atoi(data[3]) // Convert data[2] to an integer
+		if err != nil {
+			log.Fatal(err)
+		}
+		user.Role = roleInt
+
+		_, insertErr := usersStmt.Exec(user.Username, user.Password, user.Role)
+		if insertErr != nil {
+			log.Fatal(insertErr)
+		}
+	}
+
+
+	// Create a temp file to notify data imported (can use the database directly, but this is an example)
 	file, err := os.Create("./imported")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
 
-	return err
+	return nil // Return nil to indicate success
 }
+
+
+
+
+
+
+	
+
+

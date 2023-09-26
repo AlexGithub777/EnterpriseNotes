@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,128 +10,179 @@ import (
 	"github.com/icza/session"
 )
 
-type pwrData struct {
+type noteData struct {
 	Username string
-	Costs    []Cost
+	Notes    []Note
 }
+
 
 func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
-	a.isAuthenticated(w, r)
+    a.isAuthenticated(w, r)
 
-	//get the current username
-	sess := session.Get(r)
-	user := "[guest]"
+    sess := session.Get(r)
+    username := "[guest]"
+	//userID := 0
 
-	if sess != nil {
-		user = sess.CAttr("username").(string)
-	}
+    if sess != nil {
+        username = sess.CAttr("username").(string)
+		fmt.Printf(username)
+		
+    }
 
-	if r.Method != "GET" {
-		http.Error(w, "Method not allowed", http.StatusBadRequest)
-	}
+    if r.Method != http.MethodGet {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
 
-	rows, err := a.db.Query("SELECT * FROM cost ORDER by id")
+    // Retrieve all notes
+    notes, err := a.retrieveNotes(username)
+    if err != nil {
+        a.checkInternalServerError(err, w)
+        return
+    }
 
-	a.checkInternalServerError(err, w)
-	var funcMap = template.FuncMap{
-		"multiplication": func(n int, f int) int {
-			return n * f
-		},
-		"addOne": func(n int) int {
-			return n + 1
-		},
-	}
+    var funcMap = template.FuncMap{
+        "addOne": func(i int) int {
+            return i + 1
+        },
+    }
 
-	data := pwrData{}
-	data.Username = user
+    data := struct {
+        Username string
+        Notes    []Note
+    }{
+        Username: username,
+        Notes:    notes,
+    }
 
-	var cost Cost
-	for rows.Next() {
-		err = rows.Scan(&cost.Id, &cost.ElectricAmount,
-			&cost.ElectricPrice, &cost.WaterAmount, &cost.WaterPrice, &cost.CheckedDate)
-		a.checkInternalServerError(err, w)
-		data.Costs = append(data.Costs, cost)
-	}
-	t, err := template.New("list.html").Funcs(funcMap).ParseFiles("tmpl/list.html")
-	a.checkInternalServerError(err, w)
-	err = t.Execute(w, data)
-	a.checkInternalServerError(err, w)
+    t, err := template.New("list.html").Funcs(funcMap).ParseFiles("tmpl/list.html")
+    if err != nil {
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
 
+    var buf bytes.Buffer
+    err = t.Execute(&buf, data)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+    buf.WriteTo(w)
 }
+
+
+func (a *App) retrieveNotes(username string) ([]Note, error) {
+	
+	fmt.Printf("The username is %s", username)
+    rows, err := a.db.Query("SELECT * FROM notes WHERE owner = $1 ORDER BY id", username)
+    if err != nil {
+        return nil, err
+    }
+
+    var notes []Note
+    for rows.Next() {
+        var note Note
+        err := rows.Scan(
+            &note.ID,
+            &note.Title,
+            &note.NoteType,
+            &note.Description,
+            &note.NoteCreated,
+            &note.TaskCompletionTime,
+            &note.TaskCompletionDate,
+            &note.NoteStatus,
+            &note.NoteDelegation,
+            &note.Owner,
+            &note.FTSText,
+        )
+        if err != nil {
+            return nil, err
+        }
+        notes = append(notes, note)
+    }
+
+    return notes, nil
+}
+
+
 
 func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
 	a.isAuthenticated(w, r)
-	if r.Method != "POST" {
-		http.Redirect(w, r, "/", 301)
+
+	sess := session.Get(r)
+	username := sess.CAttr("username").(string)
+
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
 	}
-	var cost Cost
-	cost.ElectricAmount, _ = strconv.Atoi(r.FormValue("ElectricAmount"))
-	cost.ElectricPrice, _ = strconv.Atoi(r.FormValue("ElectricPrice"))
-	cost.WaterAmount, _ = strconv.Atoi(r.FormValue("WaterAmount"))
-	cost.WaterPrice, _ = strconv.Atoi(r.FormValue("WaterPrice"))
-	cost.CheckedDate = r.FormValue("CheckedDate")
+
+	var note Note
+	note.Title = r.FormValue("Title")
+	note.NoteType = r.FormValue("NoteType")
+	note.Description = r.FormValue("Description")
+	note.Owner = username // Set the owner ID to the logged-in user's ID (adjust as needed) !!! set to userID
 
 	// Save to database
-	stmt, err := a.db.Prepare(`
-		INSERT INTO cost(electric_amount, electric_price, water_amount, water_price, checked_date)
-		VALUES($1, $2, $3, $4, $5)
-	`)
-	if err != nil {
-		fmt.Println("Prepare query error")
-		panic(err)
-	}
-	_, err = stmt.Exec(cost.ElectricAmount, cost.ElectricPrice,
-		cost.WaterAmount, cost.WaterPrice, cost.CheckedDate)
-	if err != nil {
-		fmt.Println("Execute query error")
-		panic(err)
-	}
-	http.Redirect(w, r, "/", 301)
+	_, err := a.db.Exec(`
+		INSERT INTO notes (title, noteType, description, owner)
+		VALUES($1, $2, $3, $4)
+	`, note.Title, note.NoteType, note.Description, note.Owner)
+	a.checkInternalServerError(err, w)
+
+	
+
+	http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
 
 func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
-	a.isAuthenticated(w, r)
-	if r.Method != "POST" {
-		http.Redirect(w, r, "/", 301)
-	}
-	var cost Cost
-	cost.Id, _ = strconv.Atoi(r.FormValue("Id"))
-	cost.ElectricAmount, _ = strconv.Atoi(r.FormValue("ElectricAmount"))
-	cost.ElectricPrice, _ = strconv.Atoi(r.FormValue("ElectricPrice"))
-	cost.WaterAmount, _ = strconv.Atoi(r.FormValue("WaterAmount"))
-	cost.WaterPrice, _ = strconv.Atoi(r.FormValue("WaterPrice"))
-	cost.CheckedDate = r.FormValue("CheckedDate")
-	stmt, err := a.db.Prepare(`
-		UPDATE cost SET electric_amount=$1, electric_price=$2, water_amount=$3, water_price=$4, checked_date=$5
-		WHERE id=$6
-	`)
-	a.checkInternalServerError(err, w)
-	res, err := stmt.Exec(cost.ElectricAmount, cost.ElectricPrice,
-		cost.WaterAmount, cost.WaterPrice, cost.CheckedDate, cost.Id)
-	a.checkInternalServerError(err, w)
-	_, err = res.RowsAffected()
-	a.checkInternalServerError(err, w)
-	http.Redirect(w, r, "/", 301)
+    a.isAuthenticated(w, r)
 
+    if r.Method != http.MethodPost {
+        http.Redirect(w, r, "/", http.StatusSeeOther)
+        return
+    }
+
+    var note Note
+    note.ID, _ = strconv.Atoi(r.FormValue("ID"))
+    note.Title = r.FormValue("Title")
+    note.NoteType = r.FormValue("NoteType")
+    note.Description = r.FormValue("Description")
+
+    // Update the database
+    _, err := a.db.Exec(`
+        UPDATE notes SET title=$1, noteType=$2, description=$3
+        WHERE id=$4
+    `, note.Title, note.NoteType, note.Description, note.ID)
+    if err != nil {
+        a.checkInternalServerError(err, w)
+        return
+    }
+
+    // ... Render the template with updated notes data
+
+    http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
+
 
 func (a *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	a.isAuthenticated(w, r)
-	if r.Method != "POST" {
-		http.Redirect(w, r, "/", 301)
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
 	}
-	var costId, _ = strconv.ParseInt(r.FormValue("Id"), 10, 64)
-	stmt, err := a.db.Prepare("DELETE FROM cost WHERE id=$1")
-	a.checkInternalServerError(err, w)
-	res, err := stmt.Exec(costId)
-	a.checkInternalServerError(err, w)
-	_, err = res.RowsAffected()
-	a.checkInternalServerError(err, w)
-	http.Redirect(w, r, "/", 301)
 
+	noteID, _ := strconv.Atoi(r.FormValue("ID"))
+
+	// Delete from the database
+	_, err := a.db.Exec("DELETE FROM notes WHERE id=$1", noteID)
+	a.checkInternalServerError(err, w)
+
+	http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	a.isAuthenticated(w, r)
-	http.Redirect(w, r, "/list", 301)
+	http.Redirect(w, r, "/list", http.StatusSeeOther)
 }

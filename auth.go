@@ -23,8 +23,8 @@ func (a *App) registerHandler(w http.ResponseWriter, r *http.Request) {
 	// no range, bounds, context, type checking
 	// Check existence of user
 	var user User
-	err := a.db.QueryRow("SELECT username, password, role FROM users WHERE username=$1",
-		username).Scan(&user.Username, &user.Password, &user.Role)
+	err := a.db.QueryRow("SELECT id, username, password, role FROM users WHERE username=$1",
+		username).Scan(&user.Id, &user.Username, &user.Password, &user.Role)
 	switch {
 	// user is available
 	case err == sql.ErrNoRows:
@@ -52,12 +52,21 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 	// grab user info from the submitted form
 	username := r.FormValue("usrname")
 	password := r.FormValue("psw")
+	
 
-	// query database to get match username
+	// query database to get matching username
 	var user User
-	err := a.db.QueryRow("SELECT id, username, password FROM users WHERE username=$1",
-		username).Scan(&user.Id, &user.Username, &user.Password)
-	a.checkInternalServerError(err, w)
+	err := a.db.QueryRow("SELECT username, password FROM users WHERE username=$1",
+		username).Scan(&user.Username, &user.Password)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// Handle the case where no user with that username was found.
+			http.Redirect(w, r, "/login", 301)
+			return
+		}
+		a.checkInternalServerError(err, w)
+		return
+	}
 
 	// validate password
 	/*
@@ -81,8 +90,9 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 		Attrs:  map[string]interface{}{"count": 1},
 	})
 	session.Add(sess, w)
-
+	
 	http.Redirect(w, r, "/list", 301)
+
 }
 
 func (a *App) logoutHandler(w http.ResponseWriter, r *http.Request) {

@@ -78,12 +78,68 @@ func (a *App) Initialize() {
 
 	log.Println("Database connected successfully")
 
+	// create users table if not exists
+    createUsersTable := `CREATE TABLE IF NOT EXISTS users(
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL
+    );`
+
+    _, err = a.db.Exec(createUsersTable)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    log.Println("Users table checked/created successfully")
+
+	// creating notes table
+    createNotesTable := `CREATE TABLE IF NOT EXISTS notes ( 
+    	id SERIAL PRIMARY KEY, 
+    	title TEXT NOT NULL,
+    	noteType TEXT NOT NULL, 
+    	description TEXT NOT NULL, 
+    	noteCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
+    	taskCompletionTime TIME, 
+    	taskCompletionDate DATE, 
+    	noteStatus TEXT, 
+    	noteDelegation TEXT, 
+    	owner TEXT NOT NULL,
+    	fts_text tsvector, 
+        FOREIGN KEY (owner) REFERENCES users (username)
+    )` 
+    
+    _, err = a.db.Exec(createNotesTable)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    log.Println("Notes table checked/created successfully")
+
+    // creating user_shares table
+    createUserSharesTable := `CREATE TABLE IF NOT EXISTS user_shares (
+        user_id INTEGER,
+        note_id INTEGER,
+        PRIMARY KEY (user_id, note_id),
+        FOREIGN KEY (user_id) REFERENCES users (id),
+        FOREIGN KEY (note_id) REFERENCES notes (id)
+    )`
+    
+    _, err = a.db.Exec(createUserSharesTable)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    log.Println("User Shares table checked/created successfully")
+
 	//check data import status
 	_, err = os.Stat("./imported")
 	if os.IsNotExist(err) {
 		log.Println("--- Importing demo data")
 		a.importData()
 	}
+
+	
 
 	// Initialize the session manager - this is a global
 	// For testing purposes, we want cookies to be sent over HTTP too (not just HTTPS)
