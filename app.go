@@ -80,8 +80,7 @@ func (a *App) Initialize() {
 
 	// create users table if not exists
     createUsersTable := `CREATE TABLE IF NOT EXISTS users(
-        id SERIAL PRIMARY KEY,
-        username TEXT UNIQUE NOT NULL,
+        username TEXT UNIQUE PRIMARY KEY NOT NULL,
         password TEXT NOT NULL,
         role TEXT NOT NULL
     );`
@@ -100,8 +99,8 @@ func (a *App) Initialize() {
     	noteType TEXT NOT NULL, 
     	description TEXT NOT NULL, 
     	noteCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
-    	taskCompletionTime TIME, 
-    	taskCompletionDate DATE, 
+    	taskCompletionTime TEXT, 
+    	taskCompletionDate TEXT, 
     	noteStatus TEXT, 
     	noteDelegation TEXT, 
     	owner TEXT NOT NULL,
@@ -118,12 +117,12 @@ func (a *App) Initialize() {
 
     // creating user_shares table
     createUserSharesTable := `CREATE TABLE IF NOT EXISTS user_shares (
-        user_id INTEGER,
         note_id INTEGER,
+		username TEXT,
 		privileges TEXT,
-        PRIMARY KEY (user_id, note_id),
-        FOREIGN KEY (user_id) REFERENCES users (id),
-        FOREIGN KEY (note_id) REFERENCES notes (id)
+        PRIMARY KEY (username, note_id),
+        FOREIGN KEY (note_id) REFERENCES notes (id),
+		FOREIGN KEY (username) REFERENCES users (username)
     )`
     
     _, err = a.db.Exec(createUserSharesTable)
@@ -158,7 +157,6 @@ func (a *App) initializeRoutes() {
 	staticFileDirectory := http.Dir("./statics/")
 	staticFileHandler := http.StripPrefix("/statics/", http.FileServer(staticFileDirectory))
 	a.Router.PathPrefix("/statics/").Handler(staticFileHandler).Methods("GET")
-
 	a.Router.HandleFunc("/", a.indexHandler).Methods("GET")
 	a.Router.HandleFunc("/login", a.loginHandler).Methods("POST", "GET")
 	a.Router.HandleFunc("/logout", a.logoutHandler).Methods("GET")
@@ -167,7 +165,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/create", a.createHandler).Methods("POST", "GET")
 	a.Router.HandleFunc("/update", a.updateHandler).Methods("POST", "GET")
 	a.Router.HandleFunc("/delete", a.deleteHandler).Methods("POST", "GET")
-
+	a.Router.HandleFunc("/share", a.shareHandler).Methods("POST", "GET")
 	log.Println("Routes established")
 }
 

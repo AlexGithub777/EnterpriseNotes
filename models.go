@@ -10,9 +10,9 @@ import (
 )
 
 type UserShare struct {
-	UserID int `json:"user_id"`
 	NoteID int `json:"note_id"`
-	privileges string `json: privileges`
+	Username string `json: "username"`
+	Privileges string `json: privileges`
 }
 
 type Note struct {
@@ -27,14 +27,19 @@ type Note struct {
 	NoteDelegation     sql.NullString `json:"note_delegation"`
 	Owner              string    `json:"owner"`
 	FTSText            sql.NullString `json:"fts_text"`
+	UserShares         []UserShare
 }
 
 type User struct {
-	Id       int    `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Role     int    `json:"role"`
 }
+
+type PageData struct {
+    AllUsers []User 
+}
+
 
 func readData(fileName string) ([][]string, error) {
 	f, err := os.Open(fileName)
@@ -72,28 +77,29 @@ func (a *App) importData() error {
 		noteType TEXT NOT NULL,
 		description TEXT NOT NULL,
 		noteCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		taskCompletionTime TIME,
-		taskCompletionDate DATE,
+		taskCompletionTime TEXT,
+		taskCompletionDate TEXT,
 		noteStatus TEXT,
 		noteDelegation TEXT,
-		owner INTEGER,
+		owner TEXT,
 		fts_text tsvector
 		
 	);
 
 	
 	CREATE TABLE IF NOT EXISTS "user_shares" (
-		user_id INTEGER,
 		note_id INTEGER,
-		PRIMARY KEY (user_id, note_id),
+		username TEXT,
 		privileges TEXT,
+		PRIMARY KEY (username, note_id)
+		
+		
 		
 	);
 
 	
 	CREATE TABLE IF NOT EXISTS "users" (
-		id SERIAL PRIMARY KEY NOT NULL,
-		username TEXT UNIQUE NOT NULL,
+		username TEXT UNIQUE PRIMARY KEY NOT NULL,
 		password TEXT NOT NULL,
 		role INTEGER NOT NULL
 	);
@@ -156,10 +162,9 @@ func (a *App) importData() error {
 	var us UserShare
 	// Prepare the SQL for multiple inserts
 	for _, data := range noteSharedData {
-		us.UserID, _ = strconv.Atoi(data[0])
 		us.NoteID, _ = strconv.Atoi(data[1])
 
-		_, err := userSharesStmt.Exec(us.UserID, us.NoteID)
+		_, err := userSharesStmt.Exec(us.NoteID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -174,14 +179,14 @@ func (a *App) importData() error {
 	var user User
 	// Prepare the SQL for multiple inserts
 	for _, data := range userData {
-		userID, err := strconv.Atoi(data[0])
+	
 		if err != nil {
 			log.Fatal(err)
 		}
-		user.Id = userID
-		user.Username = data[1]
-		user.Password = data[2]
-		roleInt, err := strconv.Atoi(data[3]) // Convert data[2] to an integer
+		
+		user.Username = data[0]
+		user.Password = data[1]
+		roleInt, err := strconv.Atoi(data[2]) // Convert data[2] to an integer
 		if err != nil {
 			log.Fatal(err)
 		}
