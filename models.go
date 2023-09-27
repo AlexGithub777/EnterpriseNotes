@@ -27,7 +27,7 @@ type Note struct {
 	NoteDelegation     sql.NullString `json:"note_delegation"`
 	Owner              string    `json:"owner"`
 	FTSText            sql.NullString `json:"fts_text"`
-	UserShares         []UserShare
+	Privileges         string
 }
 
 type User struct {

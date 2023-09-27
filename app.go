@@ -166,6 +166,8 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/update", a.updateHandler).Methods("POST", "GET")
 	a.Router.HandleFunc("/delete", a.deleteHandler).Methods("POST", "GET")
 	a.Router.HandleFunc("/share", a.shareHandler).Methods("POST", "GET")
+	a.Router.HandleFunc("/remove-shared-note", a.removeSharedNoteHandler).Methods("POST")
+
 	log.Println("Routes established")
 }
 

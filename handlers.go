@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -39,7 +40,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     // Retrieve all shared notes with privileges
-    sharedNotesWithPrivileges, err := a.retrieveSharedNotesWithPrivileges(username)
+    sharedNotes, err := a.retrieveSharedNotesWithPrivileges(username)
     if err != nil {
         a.checkInternalServerError(err, w)
         return
@@ -69,7 +70,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         Username:      username,
         Notes:         notes,
         AllUsers:      allUsers,
-        SharedNotes:   sharedNotesWithPrivileges,
+        SharedNotes:   sharedNotes,
     }
 
     t, err := template.New("list.html").Funcs(funcMap).ParseFiles("tmpl/list.html")
@@ -125,7 +126,7 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
 
 func (a *App) retrieveSharedNotesWithPrivileges(username string) ([]Note, error) {
     rows, err := a.db.Query(`
-        SELECT n.*
+        SELECT n.*, us.privileges
         FROM notes n
         INNER JOIN user_shares us ON n.id = us.note_id
         WHERE us.username = $1
@@ -138,6 +139,8 @@ func (a *App) retrieveSharedNotesWithPrivileges(username string) ([]Note, error)
     var sharedNotes []Note
     for rows.Next() {
         var sharedNote Note
+		
+        
         err := rows.Scan(
             &sharedNote.ID,
             &sharedNote.Title,
@@ -150,15 +153,21 @@ func (a *App) retrieveSharedNotesWithPrivileges(username string) ([]Note, error)
             &sharedNote.NoteDelegation,
             &sharedNote.Owner,
             &sharedNote.FTSText,
+            &sharedNote.Privileges, // Retrieve the 'privileges' field
         )
         if err != nil {
             return nil, err
         }
+        
+        // Set the 'Privileges' field in the Note struct
+        
+
         sharedNotes = append(sharedNotes, sharedNote)
     }
 
     return sharedNotes, nil
 }
+
 
 
 
@@ -286,9 +295,8 @@ func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
     sharedUsername := r.FormValue("SharedUsername")
     privileges := r.FormValue("Privileges")
     noteID := r.FormValue("Id")
-	fmt.Printf("%s\n", noteID) //n	NOT GETTING PASSED
-	fmt.Printf("%s\n", privileges)
-	fmt.Printf("%s\n", sharedUsername)
+	
+	
 
     // Check if the shared user exists in the users table by username
     var sharedUserID string // Change the type to string
@@ -314,13 +322,25 @@ func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    
+    // Check if there is already an existing entry for the given note and shared user
+    var existingShareID int
+    err = a.db.QueryRow("SELECT note_id FROM user_shares WHERE note_id = $1 AND username = $2", noteID, sharedUsername).Scan(&existingShareID)
+    if err == nil {
+        // An existing entry was found, which means the note is already shared with the user
+        // You can handle this case by displaying an error message to the user
+        http.Error(w, "Note is already shared with this user", http.StatusBadRequest)
+        return
+    } else if err != sql.ErrNoRows {
+        // Handle any other errors that may have occurred during the query
+        a.checkInternalServerError(err, w)
+        return
+    }
 
-    // Insert a new row into user_shares table to link the shared user with the note
+    // If no existing entry was found, proceed with sharing the note
     _, err = a.db.Exec(`
-        INSERT INTO user_shares (note_id, username , privileges)
+        INSERT INTO user_shares (note_id, username, privileges)
         VALUES ($1, $2, $3)
-    `,noteID, sharedUsername, privileges)
+    `, noteID, sharedUsername, privileges)
     if err != nil {
         a.checkInternalServerError(err, w)
         return
@@ -332,7 +352,48 @@ func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
     http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
 
+func (a *App) removeSharedNoteHandler(w http.ResponseWriter, r *http.Request) {
+    a.isAuthenticated(w, r)
 
+    if r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    // Parse the note ID from the request
+    noteID := r.FormValue("noteID")
+
+    // Get the username of the user who wants to remove the shared note
+    sess := session.Get(r)
+    username := "[guest]"
+
+    if sess != nil {
+        username = sess.CAttr("username").(string)
+    }
+
+    // Implement the logic to remove the shared note from the user_shares table
+    err := a.removeSharedNoteFromUser(username, noteID)
+    if err != nil {
+        // Handle the error appropriately (e.g., log it or show an error page)
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+
+    // Redirect the user to a success page or back to the list of shared notes
+    http.Redirect(w, r, "/list", http.StatusSeeOther)
+}
+
+func (a *App) removeSharedNoteFromUser(username string, noteID string) error {
+    _, err := a.db.Exec(`
+        DELETE FROM user_shares
+        WHERE username = $1 AND note_id = $2
+    `, username, noteID)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
 
 
 

@@ -186,6 +186,31 @@
                                 <!-- or any other placeholder value you prefer -->
                                 {{end}}
                             </td>
+                            <td>
+                                {{if eq $note.Privileges "editor"}}
+                                <button
+                                    class="w3-btn w3-teal"
+                                    onclick="updateTask(this);"
+                                    data-noteid="{{$note.ID}}"
+                                    data-title="{{$note.Title}}"
+                                    data-description="{{$note.Description}}"
+                                    data-notetype="{{$note.NoteType}}"
+                                    data-completiontime="{{$note.TaskCompletionTime.String}}"
+                                    data-completiondate="{{$note.TaskCompletionDate.String}}"
+                                    data-notestatus="{{$note.NoteStatus.String}}"
+                                    data-delegation="{{$note.NoteDelegation.String}}"
+                                >
+                                    Modify
+                                </button>
+                                {{end}}
+
+                                <button
+                                    class="w3-btn w3-red"
+                                    onclick="openRemoveModal('{{$note.ID}}');"
+                                >
+                                    Remove
+                                </button>
+                            </td>
                         </tr>
                         {{end}}
                     </tbody>
@@ -483,6 +508,53 @@
             </div>
         </div>
 
+        <!--Remove share modal-->
+        <div class="w3-container">
+            <div id="remove-form" class="w3-modal">
+                <div
+                    class="w3-modal-content w3-card-8 w3-animate-zoom"
+                    style="max-width: 600px"
+                >
+                    <!-- head -->
+                    <div class="w3-container w3-teal">
+                        <h2>Are you sure?</h2>
+                        <span
+                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                            onclick="document.getElementById('remove-form').style.display='none'"
+                            >&times;</span
+                        >
+                    </div>
+
+                    <form
+                        class="w3-container"
+                        action="/remove-shared-note"
+                        method="post"
+                    >
+                        <input
+                            type="hidden"
+                            name="noteID"
+                            id="noteIdToRemove"
+                        />
+                        <div class="w3-center">
+                            <button
+                                class="w3-btn w3-red w3-margin-top w3-margin-bottom"
+                                type="submit"
+                            >
+                                Remove
+                            </button>
+                            <button
+                                type="button"
+                                class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                                onclick="document.getElementById('remove-form').style.display='none'"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <script>
             function updateTask(e) {
                 var editForm = document.getElementById("edit-form");
@@ -542,6 +614,11 @@
                 // Now you have the noteID as an integer, and you can use it as needed
                 // For example, you can set it as the value of an input field
                 document.getElementById("taskIdToShare").value = noteID;
+            }
+
+            function openRemoveModal(noteID) {
+                document.getElementById("remove-form").style.display = "block";
+                document.getElementById("noteIdToRemove").value = noteID;
             }
         </script>
     </body>
