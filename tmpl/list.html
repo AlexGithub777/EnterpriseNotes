@@ -47,7 +47,7 @@
                         </div>
                     </div>
                 </header>
-
+                <h3>My notes</h3>
                 <table
                     class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
                 >
@@ -104,6 +104,13 @@
                                     class="w3-btn w3-teal"
                                     onclick="updateTask(this);"
                                     data-noteid="{{$note.ID}}"
+                                    data-title="{{$note.Title}}"
+                                    data-description="{{$note.Description}}"
+                                    data-notetype="{{$note.NoteType}}"
+                                    data-completiontime="{{$note.TaskCompletionTime.String}}"
+                                    data-completiondate="{{$note.TaskCompletionDate.String}}"
+                                    data-notestatus="{{$note.NoteStatus.String}}"
+                                    data-delegation="{{$note.NoteDelegation.String}}"
                                 >
                                     Modify
                                 </button>
@@ -121,6 +128,63 @@
                                 >
                                     Share
                                 </button>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+
+                <h3>Notes shared with me</h3>
+                <table
+                    class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
+                >
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Created</th>
+                            <th>Completion Time</th>
+                            <th>Completion Date</th>
+                            <th>Status</th>
+                            <th>Delegation</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range $index, $note := .SharedNotes}}
+                        <tr>
+                            <td>{{addOne $index}}</td>
+                            <td>{{$note.ID}}</td>
+                            <td>{{$note.Title}}</td>
+                            <td>{{$note.NoteType}}</td>
+                            <td>{{$note.Description}}</td>
+                            <td>{{$note.NoteCreated}}</td>
+                            <td>
+                                {{if $note.TaskCompletionTime.Valid}}
+                                {{$note.TaskCompletionTime.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.TaskCompletionDate.Valid}}
+                                {{$note.TaskCompletionDate.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteStatus.Valid}}
+                                {{$note.NoteStatus.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteDelegation.Valid}}
+                                {{$note.NoteDelegation.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
                             </td>
                         </tr>
                         {{end}}
@@ -225,6 +289,7 @@
                                 <input
                                     class="w3-input"
                                     type="text"
+                                    id="Title"
                                     name="Title"
                                     required
                                 />
@@ -235,6 +300,7 @@
                                 <input
                                     class="w3-input"
                                     type="text"
+                                    id="NoteType"
                                     name="NoteType"
                                     required
                                 />
@@ -247,6 +313,7 @@
                                 <input
                                     class="w3-input"
                                     type="time"
+                                    id="TaskCompletionTime"
                                     name="TaskCompletionTime"
                                 />
                             </div>
@@ -256,6 +323,7 @@
                                 <input
                                     class="w3-input"
                                     type="date"
+                                    id="TaskCompletionDate"
                                     name="TaskCompletionDate"
                                 />
                             </div>
@@ -265,17 +333,24 @@
                         <input
                             class="w3-input"
                             type="text"
+                            id="Description"
                             name="Description"
                             required
                         />
 
                         <label class="w3-label">Status</label>
-                        <input class="w3-input" type="text" name="NoteStatus" />
+                        <input
+                            class="w3-input"
+                            type="text"
+                            id="NoteStatus"
+                            name="NoteStatus"
+                        />
 
                         <label class="w3-label">Delegation</label>
                         <input
                             class="w3-input"
                             type="text"
+                            id="NoteDelegation"
                             name="NoteDelegation"
                         />
 
@@ -413,7 +488,28 @@
                 var editForm = document.getElementById("edit-form");
                 // Display update form
                 editForm.style.display = "block";
+
+                var title = e.getAttribute("data-title");
+                var description = e.getAttribute("data-description");
+                var type = e.getAttribute("data-notetype");
+                var completionTime = e.getAttribute("data-completiontime");
+                var completionDate = e.getAttribute("data-completiondate");
+                var status = e.getAttribute("data-notestatus");
+                var delegation = e.getAttribute("data-delegation");
+
+                // Populate the edit form fields with the note data
+                document.getElementById("Title").value = title;
+                document.getElementById("NoteType").value = type;
+                document.getElementById("TaskCompletionTime").value =
+                    completionTime;
+                document.getElementById("TaskCompletionDate").value =
+                    completionDate;
+                document.getElementById("Description").value = description;
+                document.getElementById("NoteStatus").value = status;
+                document.getElementById("NoteDelegation").value = delegation;
+
                 // Get task ID to update
+
                 var taskId = e.getAttribute("data-noteid");
                 document.getElementById("taskIdToUpdate").value = taskId;
             }
