@@ -38,8 +38,15 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // Retrieve all shared notes with privileges
+    sharedNotesWithPrivileges, err := a.retrieveSharedNotesWithPrivileges(username)
+    if err != nil {
+        a.checkInternalServerError(err, w)
+        return
+    }
+
     // Get the list of all users
-    allUsers, err := a.getAllUsers()
+    allUsers, err := a.getAllUsers(username)
     if err != nil {
         // Handle the error appropriately (e.g., log it or show an error page)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -52,14 +59,17 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         },
     }
 
+    // Pass the shared notes with privileges to the template
     data := struct {
-        Username string
-        Notes    []Note
-        AllUsers []User // Add the AllUsers field to the data struct
+        Username      string
+        Notes         []Note
+        AllUsers      []User
+        SharedNotes   []Note
     }{
-        Username: username,
-        Notes:    notes,
-        AllUsers: allUsers, // Pass the allUsers slice to the template
+        Username:      username,
+        Notes:         notes,
+        AllUsers:      allUsers,
+        SharedNotes:   sharedNotesWithPrivileges,
     }
 
     t, err := template.New("list.html").Funcs(funcMap).ParseFiles("tmpl/list.html")
@@ -77,6 +87,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "text/html; charset=UTF-8")
     buf.WriteTo(w)
 }
+
 
 
 
@@ -112,11 +123,49 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
     return notes, nil
 }
 
-// function to get all users
-func (a *App) getAllUsers() ([]User, error) {
+func (a *App) retrieveSharedNotesWithPrivileges(username string) ([]Note, error) {
+    rows, err := a.db.Query(`
+        SELECT n.*
+        FROM notes n
+        INNER JOIN user_shares us ON n.id = us.note_id
+        WHERE us.username = $1
+        ORDER BY n.id
+    `, username)
+    if err != nil {
+        return nil, err
+    }
+
+    var sharedNotes []Note
+    for rows.Next() {
+        var sharedNote Note
+        err := rows.Scan(
+            &sharedNote.ID,
+            &sharedNote.Title,
+            &sharedNote.NoteType,
+            &sharedNote.Description,
+            &sharedNote.NoteCreated,
+            &sharedNote.TaskCompletionTime,
+            &sharedNote.TaskCompletionDate,
+            &sharedNote.NoteStatus,
+            &sharedNote.NoteDelegation,
+            &sharedNote.Owner,
+            &sharedNote.FTSText,
+        )
+        if err != nil {
+            return nil, err
+        }
+        sharedNotes = append(sharedNotes, sharedNote)
+    }
+
+    return sharedNotes, nil
+}
+
+
+
+func (a *App) getAllUsers(ownerUsername string) ([]User, error) {
     var users []User
 
-    rows, err := a.db.Query("SELECT username FROM users")
+    rows, err := a.db.Query("SELECT username FROM users WHERE username != $1", ownerUsername)
     if err != nil {
         return nil, err
     }
@@ -136,6 +185,7 @@ func (a *App) getAllUsers() ([]User, error) {
 
     return users, nil
 }
+
 
 
 
@@ -164,8 +214,8 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Save to database
 	_, err := a.db.Exec(`
-		INSERT INTO notes (title, noteType, description, TaskCompletionDate, TaskCompletionTime, NoteStatus, NoteDelegation, owner)
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO notes (title, noteType, description, TaskCompletionDate, TaskCompletionTime, NoteStatus, NoteDelegation, owner, fts_text)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, to_tsvector('english', $1 || ' ' || $2 || ' ' || $3 || ' ' || $4 || ' ' || $5 || ' ' || $6 || ' ' || $7 || ' ' || $8))
 	`, note.Title, note.NoteType, note.Description, note.TaskCompletionDate.String, note.TaskCompletionTime.String, note.NoteStatus.String, note.NoteDelegation.String, note.Owner)
 	a.checkInternalServerError(err, w)
 
@@ -183,8 +233,8 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     var note Note
-    note.ID, _ = strconv.Atoi(r.FormValue("Id"))
-    note.Title = r.FormValue("Title")
+    note.ID, _ = strconv.Atoi(r.FormValue("Id")) // Given ID
+    note.Title = r.FormValue("Title") 
     note.NoteType = r.FormValue("NoteType")
     note.Description = r.FormValue("Description")
 	note.TaskCompletionTime.String = r.FormValue("TaskCompletionTime")
