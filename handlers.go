@@ -395,10 +395,68 @@ func (a *App) removeSharedNoteFromUser(username string, noteID string) error {
     return nil
 }
 
+/*func (a *App) getFilteredUsers(ownerUsername string, noteID int) ([]User, error) {
+	fmt.Print("hi")
+    var users []User
+	fmt.Printf("%d", noteID)
+
+    // Use a subquery to select users who are not in the user_shares table for the given noteID
+    query := `
+        SELECT username FROM users
+        WHERE username != $1
+        AND username NOT IN (
+            SELECT username FROM user_shares WHERE note_id = $2
+        )
+    `
+
+    rows, err := a.db.Query(query, ownerUsername, noteID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var user User
+        if err := rows.Scan(&user.Username); err != nil {
+            return nil, err
+        }
+        users = append(users, user)
+    }
+
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return users, nil
+}
 
 
 
 
+func (a *App) shareNoteHandler(w http.ResponseWriter, r *http.Request) {
+    noteID := r.FormValue("Id") // Get the noteID from the form data
+	noteIDInt, err := strconv.Atoi(noteID)
+
+
+	sess := session.Get(r)
+    username := "[guest]"
+
+    if sess != nil {
+        username = sess.CAttr("username").(string)
+    }
+
+    // Query your database to get the list of non-shared users for the specified note.
+    nonSharedUsers, err := a.getFilteredUsers(username, noteIDInt)
+    if err != nil {
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+	fmt.Printf("%v", nonSharedUsers)
+
+    // Redirect the user to a success page or back to the list of shared notes
+    http.Redirect(w, r, "/list", http.StatusSeeOther)
+}
+*/
 
 
 

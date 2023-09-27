@@ -460,6 +460,17 @@
                     </div>
 
                     <!-- Share Form -->
+                    <!--
+                    <form
+                        type="hidden"
+                        action="/share-note"
+                        method="post"
+                        id="share-note"
+                    >
+                        <input type="hidden" id="taskIdToParse" name="Id" />
+                    </form>
+                -->
+
                     <form class="w3-container" action="/share" method="post">
                         <input type="hidden" id="taskIdToShare" name="Id" />
 
@@ -614,6 +625,8 @@
                 // Now you have the noteID as an integer, and you can use it as needed
                 // For example, you can set it as the value of an input field
                 document.getElementById("taskIdToShare").value = noteID;
+                /*var form = document.getElementById("share-note");
+                form.submit();*/
             }
 
             function openRemoveModal(noteID) {
