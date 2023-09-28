@@ -3,6 +3,6 @@
 - ability to share notes among users - working, need to add UI for sharednotes, disallow owner sharing note with self, fix checking if a note is already shared with a user if so handle
 - simple erd for our database
 - get data import working
-- update UI
-- update create modal to match edit modal - Liam
-- Assign Drop down menus to appropriate modals - Liam
+- update UI - Done
+- update create modal to match edit modal - Done
+- Assign Drop down menus to appropriate modals - Done

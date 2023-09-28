@@ -236,20 +236,47 @@
                     </div>
 
                     <form class="w3-container" action="/create" method="post">
-                        <label class="w3-label">Title</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="Title"
-                            required
-                        />
-                        <label class="w3-label">Type</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="NoteType"
-                            required
-                        />
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <label class="w3-label">Title</label>
+                                <input
+                                    class="w3-input"
+                                    type="text"
+                                    name="Title"
+                                    required
+                                />
+                            </div>
+                            <div class="w3-half">
+                                <label class="w3-label">Type</label>
+                                <select
+                                    class="w3-select"
+                                    name="NoteType"
+                                    required
+                                >
+                                    <option value="note" selected>Note</option>
+                                    <option value="task">Task</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <label class="w3-label">Completion Time</label>
+                                <input
+                                    class="w3-input"
+                                    type="time"
+                                    name="TaskCompletionTime"
+                                />
+                            </div>
+                            <div class="w3-half">
+                                <label class="w3-label">Completion Date</label>
+                                <input
+                                    class="w3-input"
+                                    type="date"
+                                    name="TaskCompletionDate"
+                                />
+                            </div>
+                        </div>
+
                         <label class="w3-label">Description</label>
                         <input
                             class="w3-input"
@@ -257,32 +284,48 @@
                             name="Description"
                             required
                         />
-                        <label class="w3-label">Completion Time</label>
-                        <input
-                            class="w3-input"
-                            type="time"
-                            name="TaskCompletionTime"
-                        />
-                        <label class="w3-label">Completion Date</label>
-                        <input
-                            class="w3-input"
-                            type="date"
-                            name="TaskCompletionDate"
-                        />
+
                         <label class="w3-label">Status</label>
-                        <input class="w3-input" type="text" name="NoteStatus" />
+                        <select class="w3-select" name="NoteStatus" required>
+                            <option value="None" selected>None</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Delegated">Delegated</option>
+                        </select>
                         <label class="w3-label">Delegation</label>
-                        <input
+                        <select
                             class="w3-input"
                             type="text"
                             name="NoteDelegation"
-                        />
-                        <button
-                            class="w3-btn w3-teal w3-margin-top w3-margin-bottom w3-right"
-                            type="submit"
                         >
-                            Create
-                        </button>
+                            <option value="" selected></option>
+                            <!-- Generate options from user data -->
+                            {{range $user := .AllUsers}}
+                            <option value="{{$user.Username}}">
+                                {{$user.Username}}
+                            </option>
+                            {{end}}
+                        </select>
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                                    type="submit"
+                                >
+                                    Create
+                                </button>
+                            </div>
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
+                                    type="button"
+                                    onclick="document.getElementById('create-form').style.display='none'"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -321,14 +364,16 @@
                             </div>
 
                             <div class="w3-half">
-                                <label class="w3-label">Type</label>
-                                <input
-                                    class="w3-input"
-                                    type="text"
+                                <label class="w3-label">Note/Task</label>
+                                <select
+                                    class="w3-select"
                                     id="NoteType"
                                     name="NoteType"
                                     required
-                                />
+                                >
+                                    <option value="note">Note</option>
+                                    <option value="task">Task</option>
+                                </select>
                             </div>
                         </div>
 
@@ -364,20 +409,31 @@
                         />
 
                         <label class="w3-label">Status</label>
-                        <input
+                        <select
                             class="w3-input"
-                            type="text"
                             id="NoteStatus"
                             name="NoteStatus"
-                        />
+                        >
+                            <option value="None">None</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Delegated">Delegated</option>
+                        </select>
 
                         <label class="w3-label">Delegation</label>
-                        <input
+                        <select
                             class="w3-input"
-                            type="text"
                             id="NoteDelegation"
                             name="NoteDelegation"
-                        />
+                        >
+                            <!-- Generate options from user data -->
+                            {{range $user := .AllUsers}}
+                            <option value="{{$user.Username}}">
+                                {{$user.Username}}
+                            </option>
+                            {{end}}
+                        </select>
 
                         <div class="w3-row-padding">
                             <div class="w3-half">
@@ -392,7 +448,7 @@
                                 <button
                                     class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
                                     type="button"
-                                    onclick="closeEditForm()"
+                                    onclick="document.getElementById('edit-form').style.display='none'"
                                 >
                                     Cancel
                                 </button>
