@@ -1,5 +1,5 @@
 - update fts_text on update
-- fix Completion Time, Completion Date, Status, Delegation note displaying on search
+- add action modals (js code) from list.html to search results
 - fix deleting a shared note, delete record from user_shares
 - add ability to search a note based on shared users
 - add ability to search to include shared notes
