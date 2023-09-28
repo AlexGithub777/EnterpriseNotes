@@ -89,7 +89,87 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     buf.WriteTo(w)
 }
 
+// Add the searchNotesHandler function
+func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
+    searchQuery := r.FormValue("searchQuery")
+    fmt.Printf("%s", searchQuery)
 
+    // Query your database using FTS to search for notes based on searchQuery
+    // Replace this with your actual database query
+    results, err := a.searchNotesInDatabase(searchQuery)
+    if err != nil {
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+
+    // Print the search results to the console
+    for i, result := range results {
+        fmt.Printf("Result %d:\n", i+1)
+        fmt.Printf("ID: %d\n", result.ID)
+        fmt.Printf("Title: %s\n", result.Title)
+        fmt.Printf("NoteType: %s\n", result.NoteType)
+        fmt.Printf("Description: %s\n", result.Description)
+        fmt.Printf("NoteCreated: %s\n", result.NoteCreated)
+        fmt.Printf("TaskCompletionTime: %s (Valid: %t)\n", result.TaskCompletionTime.String, result.TaskCompletionTime.Valid)
+        fmt.Printf("TaskCompletionDate: %s (Valid: %t)\n", result.TaskCompletionDate.String, result.TaskCompletionDate.Valid)
+        fmt.Printf("NoteStatus: %s (Valid: %t)\n", result.NoteStatus.String, result.NoteStatus.Valid)
+        fmt.Printf("NoteDelegation: %s (Valid: %t)\n", result.NoteDelegation.String, result.NoteDelegation.Valid)
+    }
+    
+    // Pass the shared notes with privileges to the template
+    searchData := struct {
+        SearchResults   []Note
+    }{
+        SearchResults:  results,
+    }
+
+
+    // Render the search results in your template
+    t, err := template.New("search_results.html").ParseFiles("tmpl/search_results.html")
+    if err != nil {
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+
+    // Pass the search results to the template
+    if err := t.Execute(w, searchData); err != nil {
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+}
+
+// Implement the searchNotesInDatabase function to query your database using FTS
+func (a *App) searchNotesInDatabase(searchQuery string) ([]Note, error) {
+    // Implement your database query using FTS to search for notes based on searchQuery
+    // Replace this with your actual database query logic
+
+    var results []Note
+    fmt.Printf("hi")
+
+    rows, err := a.db.Query("SELECT id, title, notetype, description, notecreated, taskcompletiondate, taskcompletiontime, notestatus, notedelegation FROM notes WHERE fts_text @@ to_tsquery('english', $1)", searchQuery)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var note Note
+        // Populate the note struct from the database result
+        if err := rows.Scan(&note.ID, &note.Title, &note.Description, /* ...other fields... */); err != nil {
+            return nil, err
+        }
+        results = append(results, note)
+        
+        // Print the result to the console
+        fmt.Printf("Result - ID: %d, Title: %s, Description: %s, ... (add other fields)\n", note.ID, note.Title, note.Description)
+    }
+
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return results, nil
+}
 
 
 func (a *App) retrieveNotes(username string) ([]Note, error) {
