@@ -1,6 +1,9 @@
-- modify note - All working, add autofil
-- on note Create and update, add/update FTS text - add search box for notes, ability to search and count word snippets in a note - modify handlers to add, all fields to db
-- ability to share notes among users - working, need to add UI for sharednotes, disallow owner sharing note with self, fix checking if a note is already shared with a user if so handle
+- update fts_text on update
+- fix Completion Time, Completion Date, Status, Delegation note displaying on search
+- fix deleting a shared note, delete record from user_shares
+- add ability to search a note based on shared users
+- add ability to search to include shared notes
+- fix checking if a note is already shared with a user
 - simple erd for our database
 - get data import working
 - update UI - Done
