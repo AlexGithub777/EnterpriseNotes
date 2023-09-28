@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/statics/ionicons/css/w3.css" />
+    <link rel="stylesheet" href="/statics/ionicons/css/ionicons.min.css" />
+    <title>Task Manager</title>
+    <style>
+      .hoverbtn:hover {
+        font-weight: bold;
+        opacity: 0.4;
+      }
+
+      a {
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h3>Search Results</h3>
+      <table class="w3-table w3-centered w3-border w3-bordered w3-hoverable">
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Created</th>
+            <th>Completion Time</th>
+            <th>Completion Date</th>
+            <th>Status</th>
+            <th>Delegation</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range $index, $note := .SearchResults}}
+          <tr>
+            <td>{{$index}}</td>
+            <td>{{$note.ID}}</td>
+            <td>{{$note.Title}}</td>
+            <td>{{$note.NoteType}}</td>
+            <td>{{$note.Description}}</td>
+            <td>{{$note.NoteCreated}}</td>
+            <td>
+              {{if $note.TaskCompletionTime.Valid}}
+              {{$note.TaskCompletionTime.String}} {{else}} N/A {{end}}
+            </td>
+            <td>
+              {{if $note.TaskCompletionDate.Valid}}
+              {{$note.TaskCompletionDate.String}} {{else}} N/A {{end}}
+            </td>
+            <td>
+              {{if $note.NoteStatus.Valid}} {{$note.NoteStatus.String}} {{else}}
+              N/A {{end}}
+            </td>
+            <td>
+              {{if $note.NoteDelegation.Valid}} {{$note.NoteDelegation.String}}
+              {{else}} N/A {{end}}
+            </td>
+            <td>
+              <button
+                class="w3-btn w3-teal"
+                onclick="updateTask(this);"
+                data-noteid="{{$note.ID}}"
+                data-title="{{$note.Title}}"
+                data-description="{{$note.Description}}"
+                data-notetype="{{$note.NoteType}}"
+                data-completiontime="{{$note.TaskCompletionTime.String}}"
+                data-completiondate="{{$note.TaskCompletionDate.String}}"
+                data-notestatus="{{$note.NoteStatus.String}}"
+                data-delegation="{{$note.NoteDelegation.String}}"
+              >
+                Modify
+              </button>
+              <button
+                class="w3-btn w3-red"
+                onclick="deleteTask(this)"
+                data-taskid="{{$note.ID}}"
+              >
+                Delete
+              </button>
+              <button
+                class="w3-btn w3-blue"
+                onclick="shareTask(this)"
+                share-noteid="{{$note.ID}}"
+              >
+                Share
+              </button>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+
+      <!-- Rest of your code -->
+    </div>
+  </body>
+</html>
