@@ -47,7 +47,7 @@
                         </div>
                     </div>
                 </header>
-
+                <h3>My notes</h3>
                 <table
                     class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
                 >
@@ -75,22 +75,140 @@
                             <td>{{$note.NoteType}}</td>
                             <td>{{$note.Description}}</td>
                             <td>{{$note.NoteCreated}}</td>
-                            <td>{{$note.TaskCompletionTime}}</td>
-                            <td>{{$note.TaskCompletionDate}}</td>
-                            <td>{{$note.NoteStatus}}</td>
-                            <td>{{$note.NoteDelegation}}</td>
+                            <td>
+                                {{if $note.TaskCompletionTime.Valid}}
+                                {{$note.TaskCompletionTime.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.TaskCompletionDate.Valid}}
+                                {{$note.TaskCompletionDate.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteStatus.Valid}}
+                                {{$note.NoteStatus.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteDelegation.Valid}}
+                                {{$note.NoteDelegation.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
                             <td>
                                 <button
                                     class="w3-btn w3-teal"
                                     onclick="updateTask(this);"
+                                    data-noteid="{{$note.ID}}"
+                                    data-title="{{$note.Title}}"
+                                    data-description="{{$note.Description}}"
+                                    data-notetype="{{$note.NoteType}}"
+                                    data-completiontime="{{$note.TaskCompletionTime.String}}"
+                                    data-completiondate="{{$note.TaskCompletionDate.String}}"
+                                    data-notestatus="{{$note.NoteStatus.String}}"
+                                    data-delegation="{{$note.NoteDelegation.String}}"
                                 >
                                     Modify
                                 </button>
                                 <button
                                     class="w3-btn w3-red"
                                     onclick="deleteTask(this)"
+                                    data-taskid="{{$note.ID}}"
                                 >
                                     Delete
+                                </button>
+                                <button
+                                    class="w3-btn w3-blue"
+                                    onclick="shareTask(this)"
+                                    share-noteid="{{$note.ID}}"
+                                >
+                                    Share
+                                </button>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+
+                <h3>Notes shared with me</h3>
+                <table
+                    class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
+                >
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Created</th>
+                            <th>Completion Time</th>
+                            <th>Completion Date</th>
+                            <th>Status</th>
+                            <th>Delegation</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range $index, $note := .SharedNotes}}
+                        <tr>
+                            <td>{{addOne $index}}</td>
+                            <td>{{$note.ID}}</td>
+                            <td>{{$note.Title}}</td>
+                            <td>{{$note.NoteType}}</td>
+                            <td>{{$note.Description}}</td>
+                            <td>{{$note.NoteCreated}}</td>
+                            <td>
+                                {{if $note.TaskCompletionTime.Valid}}
+                                {{$note.TaskCompletionTime.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.TaskCompletionDate.Valid}}
+                                {{$note.TaskCompletionDate.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteStatus.Valid}}
+                                {{$note.NoteStatus.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteDelegation.Valid}}
+                                {{$note.NoteDelegation.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if eq $note.Privileges "editor"}}
+                                <button
+                                    class="w3-btn w3-teal"
+                                    onclick="updateTask(this);"
+                                    data-noteid="{{$note.ID}}"
+                                    data-title="{{$note.Title}}"
+                                    data-description="{{$note.Description}}"
+                                    data-notetype="{{$note.NoteType}}"
+                                    data-completiontime="{{$note.TaskCompletionTime.String}}"
+                                    data-completiondate="{{$note.TaskCompletionDate.String}}"
+                                    data-notestatus="{{$note.NoteStatus.String}}"
+                                    data-delegation="{{$note.NoteDelegation.String}}"
+                                >
+                                    Modify
+                                </button>
+                                {{end}}
+
+                                <button
+                                    class="w3-btn w3-red"
+                                    onclick="openRemoveModal('{{$note.ID}}');"
+                                >
+                                    Remove
                                 </button>
                             </td>
                         </tr>
@@ -189,53 +307,97 @@
 
                     <form class="w3-container" action="/update" method="post">
                         <input type="hidden" name="Id" id="taskIdToUpdate" />
-                        <label class="w3-label">Title</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="Title"
-                            required
-                        />
-                        <label class="w3-label">Type</label>
-                        <input
-                            class="w3-input"
-                            type="text"
-                            name="NoteType"
-                            required
-                        />
+
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <label class="w3-label">Title</label>
+                                <input
+                                    class="w3-input"
+                                    type="text"
+                                    id="Title"
+                                    name="Title"
+                                    required
+                                />
+                            </div>
+
+                            <div class="w3-half">
+                                <label class="w3-label">Type</label>
+                                <input
+                                    class="w3-input"
+                                    type="text"
+                                    id="NoteType"
+                                    name="NoteType"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <label class="w3-label">Completion Time</label>
+                                <input
+                                    class="w3-input"
+                                    type="time"
+                                    id="TaskCompletionTime"
+                                    name="TaskCompletionTime"
+                                />
+                            </div>
+
+                            <div class="w3-half">
+                                <label class="w3-label">Completion Date</label>
+                                <input
+                                    class="w3-input"
+                                    type="date"
+                                    id="TaskCompletionDate"
+                                    name="TaskCompletionDate"
+                                />
+                            </div>
+                        </div>
+
                         <label class="w3-label">Description</label>
                         <input
                             class="w3-input"
                             type="text"
+                            id="Description"
                             name="Description"
                             required
                         />
-                        <label class="w3-label">Completion Time</label>
-                        <input
-                            class="w3-input"
-                            type="time"
-                            name="TaskCompletionTime"
-                        />
-                        <label class="w3-label">Completion Date</label>
-                        <input
-                            class="w3-input"
-                            type="date"
-                            name="TaskCompletionDate"
-                        />
+
                         <label class="w3-label">Status</label>
-                        <input class="w3-input" type="text" name="NoteStatus" />
+                        <input
+                            class="w3-input"
+                            type="text"
+                            id="NoteStatus"
+                            name="NoteStatus"
+                        />
+
                         <label class="w3-label">Delegation</label>
                         <input
                             class="w3-input"
                             type="text"
+                            id="NoteDelegation"
                             name="NoteDelegation"
                         />
-                        <button
-                            class="w3-btn w3-teal w3-margin-top w3-margin-bottom w3-right"
-                            type="submit"
-                        >
-                            Save
-                        </button>
+
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                                    type="submit"
+                                >
+                                    Save
+                                </button>
+                            </div>
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
+                                    type="button"
+                                    onclick="closeEditForm()"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -280,22 +442,196 @@
             </div>
         </div>
 
+        <!-- Share Modal -->
+        <div class="w3-container">
+            <div id="share-form" class="w3-modal">
+                <div
+                    class="w3-modal-content w3-card-8 w3-animate-zoom"
+                    style="max-width: 400px"
+                >
+                    <!-- Head -->
+                    <div class="w3-container w3-teal">
+                        <h2>Share Note</h2>
+                        <span
+                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                            onclick="document.getElementById('share-form').style.display='none'"
+                            >&times;</span
+                        >
+                    </div>
+
+                    <!-- Share Form -->
+                    <!--
+                    <form
+                        type="hidden"
+                        action="/share-note"
+                        method="post"
+                        id="share-note"
+                    >
+                        <input type="hidden" id="taskIdToParse" name="Id" />
+                    </form>
+                -->
+
+                    <form class="w3-container" action="/share" method="post">
+                        <input type="hidden" id="taskIdToShare" name="Id" />
+
+                        <label class="w3-label">Select User</label>
+                        <select
+                            class="w3-select"
+                            name="SharedUsername"
+                            required
+                        >
+                            <!-- Generate options from user data -->
+                            {{range $user := .AllUsers}}
+                            <option value="{{$user.Username}}">
+                                {{$user.Username}}
+                            </option>
+                            {{end}}
+                        </select>
+
+                        <label class="w3-label">Privileges</label>
+                        <div class="w3-container">
+                            <input
+                                class="w3-radio"
+                                type="radio"
+                                name="Privileges"
+                                value="editor"
+                                checked
+                            />
+                            <label class="w3-validate">Editor</label>
+
+                            <input
+                                class="w3-radio"
+                                type="radio"
+                                name="Privileges"
+                                value="viewer"
+                            />
+                            <label class="w3-validate">Viewer</label>
+                        </div>
+
+                        <button
+                            class="w3-btn w3-teal w3-margin-top"
+                            type="submit"
+                        >
+                            Share
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!--Remove share modal-->
+        <div class="w3-container">
+            <div id="remove-form" class="w3-modal">
+                <div
+                    class="w3-modal-content w3-card-8 w3-animate-zoom"
+                    style="max-width: 600px"
+                >
+                    <!-- head -->
+                    <div class="w3-container w3-teal">
+                        <h2>Are you sure?</h2>
+                        <span
+                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                            onclick="document.getElementById('remove-form').style.display='none'"
+                            >&times;</span
+                        >
+                    </div>
+
+                    <form
+                        class="w3-container"
+                        action="/remove-shared-note"
+                        method="post"
+                    >
+                        <input
+                            type="hidden"
+                            name="noteID"
+                            id="noteIdToRemove"
+                        />
+                        <div class="w3-center">
+                            <button
+                                class="w3-btn w3-red w3-margin-top w3-margin-bottom"
+                                type="submit"
+                            >
+                                Remove
+                            </button>
+                            <button
+                                type="button"
+                                class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                                onclick="document.getElementById('remove-form').style.display='none'"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <script>
             function updateTask(e) {
                 var editForm = document.getElementById("edit-form");
                 // Display update form
                 editForm.style.display = "block";
+
+                var title = e.getAttribute("data-title");
+                var description = e.getAttribute("data-description");
+                var type = e.getAttribute("data-notetype");
+                var completionTime = e.getAttribute("data-completiontime");
+                var completionDate = e.getAttribute("data-completiondate");
+                var status = e.getAttribute("data-notestatus");
+                var delegation = e.getAttribute("data-delegation");
+
+                // Populate the edit form fields with the note data
+                document.getElementById("Title").value = title;
+                document.getElementById("NoteType").value = type;
+                document.getElementById("TaskCompletionTime").value =
+                    completionTime;
+                document.getElementById("TaskCompletionDate").value =
+                    completionDate;
+                document.getElementById("Description").value = description;
+                document.getElementById("NoteStatus").value = status;
+                document.getElementById("NoteDelegation").value = delegation;
+
                 // Get task ID to update
-                var taskId = e.parentNode.parentNode.childNodes[3].innerText;
+
+                var taskId = e.getAttribute("data-noteid");
                 document.getElementById("taskIdToUpdate").value = taskId;
             }
 
             function deleteTask(e) {
                 var deleteForm = document.getElementById("delete-form");
                 deleteForm.style.display = "block";
-                // Get task ID to delete
-                var taskId = e.parentNode.parentNode.childNodes[3].innerText;
-                document.getElementById("taskIdToDelete").value = taskId;
+
+                // Get task ID to delete from the data attribute
+                var taskId = e.getAttribute("data-taskid");
+
+                // Assuming taskId is a string, you can convert it to an integer using parseInt
+                var noteID = parseInt(taskId, 10);
+
+                // Now you have the noteID as an integer, and you can use it as needed
+                // For example, you can set it as the value of an input field
+                document.getElementById("taskIdToDelete").value = noteID;
+            }
+
+            function shareTask(e) {
+                var shareForm = document.getElementById("share-form");
+                shareForm.style.display = "block";
+
+                // Get task ID to delete from the data attribute
+                var taskId = e.getAttribute("share-noteid");
+
+                // Assuming taskId is a string, you can convert it to an integer using parseInt
+                var noteID = parseInt(taskId, 10);
+
+                // Now you have the noteID as an integer, and you can use it as needed
+                // For example, you can set it as the value of an input field
+                document.getElementById("taskIdToShare").value = noteID;
+                /*var form = document.getElementById("share-note");
+                form.submit();*/
+            }
+
+            function openRemoveModal(noteID) {
+                document.getElementById("remove-form").style.display = "block";
+                document.getElementById("noteIdToRemove").value = noteID;
             }
         </script>
     </body>

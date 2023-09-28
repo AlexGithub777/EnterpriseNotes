@@ -23,8 +23,8 @@ func (a *App) registerHandler(w http.ResponseWriter, r *http.Request) {
 	// no range, bounds, context, type checking
 	// Check existence of user
 	var user User
-	err := a.db.QueryRow("SELECT id, username, password, role FROM users WHERE username=$1",
-		username).Scan(&user.Id, &user.Username, &user.Password, &user.Role)
+	err := a.db.QueryRow("SELECT username, password, role FROM users WHERE username=$1",
+		username).Scan(&user.Username, &user.Password, &user.Role)
 	switch {
 	// user is available
 	case err == sql.ErrNoRows:
@@ -86,7 +86,7 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Successful login. New session with initial constant and variable attributes
 	sess := session.NewSessionOptions(&session.SessOptions{
-		CAttrs: map[string]interface{}{"username": user.Username, "userid": user.Id},
+		CAttrs: map[string]interface{}{"username": user.Username},
 		Attrs:  map[string]interface{}{"count": 1},
 	})
 	session.Add(sess, w)
