@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/icza/session"
 )
@@ -25,6 +26,8 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 
     if sess != nil {
         username = sess.CAttr("username").(string)
+		a.username = username
+		
     }
 
     if r.Method != http.MethodGet {
@@ -93,10 +96,11 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
     searchQuery := r.FormValue("searchQuery")
     fmt.Printf("%s", searchQuery)
+	
 
     // Query your database using FTS to search for notes based on searchQuery
     // Replace this with your actual database query
-    results, err := a.searchNotesInDatabase(searchQuery)
+    results, err := a.searchNotesInDatabase(searchQuery, a.username)
     if err != nil {
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
@@ -139,36 +143,51 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Implement the searchNotesInDatabase function to query your database using FTS
-func (a *App) searchNotesInDatabase(searchQuery string) ([]Note, error) {
+func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note, error) {
     // Implement your database query using FTS to search for notes based on searchQuery
     // Replace this with your actual database query logic
 
-    var results []Note
-    fmt.Printf("hi")
-
-    rows, err := a.db.Query("SELECT id, title, notetype, description, notecreated, taskcompletiondate, taskcompletiontime, notestatus, notedelegation FROM notes WHERE fts_text @@ to_tsquery('english', $1)", searchQuery)
+    
+    
+	fmt.Print(username)
+    rows, err := a.db.Query("SELECT id, title, notetype, description, notecreated, taskcompletiondate, taskcompletiontime, notestatus, notedelegation FROM notes WHERE fts_text @@ to_tsquery('english', $1) AND owner = $2", searchQuery, username)
     if err != nil {
         return nil, err
     }
+	
     defer rows.Close()
-
+	var notes []Note
     for rows.Next() {
-        var note Note
+        var id int
+        var title, noteType, description, taskCompletionDate, taskCompletionTime, noteStatus, noteDelegation string
+		var noteCreated time.Time
         // Populate the note struct from the database result
-        if err := rows.Scan(&note.ID, &note.Title, &note.Description, /* ...other fields... */); err != nil {
-            return nil, err
+        if err := rows.Scan(&id, &title, &noteType, &description, &noteCreated, &taskCompletionDate, &taskCompletionTime, &noteStatus, &noteDelegation); err != nil {
+            fmt.Println("error")
+			return nil, err
         }
-        results = append(results, note)
+		
+		var note Note
+		note.ID = id
+		note.Title = title
+		note.Description = description
+		note.NoteType = noteType
+		note.Description = description
+		note.NoteCreated = noteCreated
+		note.TaskCompletionDate.String = taskCompletionDate
+		note.TaskCompletionTime.String = taskCompletionTime
+		note.NoteStatus.String = noteStatus
+		note.NoteDelegation.String = noteDelegation
+
+		notes = append(notes, note)
         
         // Print the result to the console
-        fmt.Printf("Result - ID: %d, Title: %s, Description: %s, ... (add other fields)\n", note.ID, note.Title, note.Description)
+        fmt.Printf("Result - ID: %d, Title: %s, Description: %s, ... (add other fields)\n", id, title, description)
     }
 
-    if err := rows.Err(); err != nil {
-        return nil, err
-    }
 
-    return results, nil
+
+    return notes, nil
 }
 
 
