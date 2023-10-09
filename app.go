@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/icza/session"
 	_ "github.com/jackc/pgx/v5/stdlib" //use pgx in database/sql mode
 )
 
@@ -138,14 +137,9 @@ func (a *App) Initialize() {
 	//	log.Println("--- Importing demo data")
 	//	a.importData()
 	
-
 	
-
-	// Initialize the session manager - this is a global
-	// For testing purposes, we want cookies to be sent over HTTP too (not just HTTPS)
-	// refer to the auth.go for the authentication handlers using the sessions
-	session.Global.Close()
-	session.Global = session.NewCookieManagerOptions(session.NewInMemStore(), &session.CookieMngrOptions{AllowHTTP: true})
+	//set some defaults for the authentication to also support HTTP and HTTPS
+	a.setupAuth()
 
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
@@ -178,10 +172,14 @@ func (a *App) Run(addr string) {
 		a.bindport = addr
 	}
 
-	log.Printf("Starting HTTP service on %s", a.bindport)
+	// get the local IP that has Internet connectivity
+	ip := GetOutboundIP()
+
+	log.Printf("Starting HTTP service on http://%s:%s", ip, a.bindport)
 	// setup HTTP on gorilla mux for a gracefull shutdown
 	srv := &http.Server{
-		Addr: "0.0.0.0:" + a.bindport,
+		//Addr: "0.0.0.0:" + a.bindport,
+		Addr: ip + ":" + a.bindport,
 
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,

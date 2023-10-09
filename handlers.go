@@ -38,14 +38,14 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     // Retrieve all notes
     notes, err := a.retrieveNotes(username)
     if err != nil {
-        a.checkInternalServerError(err, w)
+        checkInternalServerError(err, w)
         return
     }
 
     // Retrieve all shared notes with privileges
     sharedNotes, err := a.retrieveSharedNotesWithPrivileges(username)
     if err != nil {
-        a.checkInternalServerError(err, w)
+        checkInternalServerError(err, w)
         return
     }
 
@@ -325,7 +325,7 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
 		INSERT INTO notes (title, noteType, description, TaskCompletionDate, TaskCompletionTime, NoteStatus, NoteDelegation, owner, fts_text)
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8, to_tsvector('english', $1 || ' ' || $2 || ' ' || $3 || ' ' || $4 || ' ' || $5 || ' ' || $6 || ' ' || $7 || ' ' || $8))
 	`, note.Title, note.NoteType, note.Description, note.TaskCompletionDate.String, note.TaskCompletionTime.String, note.NoteStatus.String, note.NoteDelegation.String, note.Owner)
-	a.checkInternalServerError(err, w)
+	checkInternalServerError(err, w)
 
 	
 
@@ -358,7 +358,7 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
     `, note.Title, note.NoteType, note.Description, note.TaskCompletionTime.String,
     note.TaskCompletionDate.String, note.NoteStatus.String, note.NoteDelegation.String, note.ID)
     if err != nil {
-        a.checkInternalServerError(err, w)
+        checkInternalServerError(err, w)
         return
     }
 
@@ -377,7 +377,7 @@ func (a *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	noteID, _ := strconv.Atoi(r.FormValue("Id"))
 	// Delete from the database
 	_, err := a.db.Exec("DELETE FROM notes WHERE id=$1", noteID)
-	a.checkInternalServerError(err, w)
+	checkInternalServerError(err, w)
 
 	http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
@@ -412,7 +412,7 @@ func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
     err = a.db.QueryRow("SELECT EXISTS(SELECT 1 FROM notes WHERE id = $1)", noteID).Scan(&noteExists)
 	fmt.Printf("%t\n", noteExists)
     if err != nil {
-        a.checkInternalServerError(err, w)
+        checkInternalServerError(err, w)
         return
     }
 
@@ -431,7 +431,7 @@ func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
         return
     } else if err != sql.ErrNoRows {
         // Handle any other errors that may have occurred during the query
-        a.checkInternalServerError(err, w)
+        checkInternalServerError(err, w)
         return
     }
 
@@ -441,7 +441,7 @@ func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
         VALUES ($1, $2, $3)
     `, noteID, sharedUsername, privileges)
     if err != nil {
-        a.checkInternalServerError(err, w)
+        checkInternalServerError(err, w)
         return
     }
 

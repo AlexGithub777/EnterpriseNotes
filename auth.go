@@ -29,11 +29,11 @@ func (a *App) registerHandler(w http.ResponseWriter, r *http.Request) {
 	// user is available
 	case err == sql.ErrNoRows:
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		a.checkInternalServerError(err, w)
+		checkInternalServerError(err, w)
 		// insert to database
 		_, err = a.db.Exec(`INSERT INTO users(username, password, role) VALUES($1, $2, $3)`,
 			username, hashedPassword, role)
-		a.checkInternalServerError(err, w)
+		checkInternalServerError(err, w)
 	case err != nil:
 		http.Error(w, "loi: "+err.Error(), http.StatusBadRequest)
 		return
@@ -64,7 +64,7 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/login", 301)
 			return
 		}
-		a.checkInternalServerError(err, w)
+		checkInternalServerError(err, w)
 		return
 	}
 
@@ -91,6 +91,7 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	session.Add(sess, w)
 	
+	
 	http.Redirect(w, r, "/list", 301)
 
 }
@@ -103,15 +104,12 @@ func (a *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	session.Remove(s, w)
 	s = nil
 
-	//http.Redirect(w, r, "/login", 301)
+	http.Redirect(w, r, "/login", 301)
 }
 
 func (a *App) isAuthenticated(w http.ResponseWriter, r *http.Request) {
 	authenticated := false
 
-	//m := map[string]interface{}{}
-
-	// get the current session variables
 	sess := session.Get(r)
 
 	if sess != nil {
@@ -127,4 +125,13 @@ func (a *App) isAuthenticated(w http.ResponseWriter, r *http.Request) {
 	if !authenticated {
 		http.Redirect(w, r, "/login", 301)
 	}
+}
+
+
+// Initialize the session manager - this is a global
+// For testing purposes, we want cookies to be sent over HTTP too (not just HTTPS)
+// refer to the auth.go for the authentication handlers using the sessions
+func (a *App) setupAuth() {
+	session.Global.Close()
+	session.Global = session.NewCookieManagerOptions(session.NewInMemStore(), &session.CookieMngrOptions{AllowHTTP: true})
 }
