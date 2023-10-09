@@ -8,3 +8,5 @@
 - update UI - Done
 - update create modal to match edit modal - Done
 - Assign Drop down menus to appropriate modals - Done
+
+look at jobs tradie
