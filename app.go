@@ -121,8 +121,8 @@ func (a *App) Initialize() {
 		username TEXT,
 		privileges TEXT,
         PRIMARY KEY (username, note_id),
-        FOREIGN KEY (note_id) REFERENCES notes (id),
-		FOREIGN KEY (username) REFERENCES users (username)
+        FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE,
+		FOREIGN KEY (username) REFERENCES users (username) ON DELETE CASCADE
     )`
     
     _, err = a.db.Exec(createUserSharesTable)
