@@ -184,10 +184,14 @@ func (a *App) Run(addr string) {
 		a.bindport = addr
 	}
 
-	log.Printf("Starting HTTP service on %s", a.bindport)
+	// get the local IP that has Internet connectivity
+	ip := GetOutboundIP()
+
+	log.Printf("Starting HTTP service on http://%s:%s", ip, a.bindport)
 	// setup HTTP on gorilla mux for a gracefull shutdown
 	srv := &http.Server{
-		Addr: "0.0.0.0:" + a.bindport,
+		//Addr: "0.0.0.0:" + a.bindport,
+		Addr: ip + ":" + a.bindport,
 
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,

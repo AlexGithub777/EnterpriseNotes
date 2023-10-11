@@ -1,4 +1,4 @@
-module github.com/yonush/pwrcost
+module github.com/AlexGithub777/notes
 
 go 1.21.0
 
