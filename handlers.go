@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/icza/session"
@@ -292,26 +291,30 @@ func (a *App) getUnsharedUsersForNoteHandler(w http.ResponseWriter, r *http.Requ
 // Add the searchNotesHandler function
 func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
     searchQuery := r.FormValue("searchQuery")
-    
-	
 
     // Query your database using FTS to search for notes based on searchQuery
-    // Replace this with your actual database query
     results, err := a.searchNotesInDatabase(searchQuery, a.username)
     if err != nil {
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
     }
 
-    
-    
-    // Pass the shared notes with privileges to the template
-    searchData := struct {
-        SearchResults   []Note
-    }{
-        SearchResults:  results,
+    // Retrieve shared users for each note in the search results
+    for i, note := range results {
+        sharedUsers, err := a.getSharedUsersForNote(note.ID)
+        if err != nil {
+            http.Error(w, "Failed to fetch shared users: "+err.Error(), http.StatusInternalServerError)
+            return
+        }
+        results[i].SharedUsers = sharedUsers
     }
 
+    // Pass the search results with shared users to the template
+    searchData := struct {
+        SearchResults []Note
+    }{
+        SearchResults: results,
+    }
 
     // Render the search results in your template
     t, err := template.New("search_results.html").ParseFiles("tmpl/search_results.html")
@@ -327,52 +330,60 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
-// Implement the searchNotesInDatabase function to query your database using FTS
-func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note, error) {
-    // Implement your database query using FTS to search for notes based on searchQuery
-    // Replace this with your actual database query logic
 
-    
-    
-	
-    rows, err := a.db.Query("SELECT id, title, notetype, description, notecreated, taskcompletiondate, taskcompletiontime, notestatus, notedelegation FROM notes WHERE fts_text @@ to_tsquery('english', $1) AND owner = $2", searchQuery, username)
+func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note, error) {
+    query := `
+        SELECT notes.id, notes.title, notes.notetype, notes.description, notes.notecreated,
+               notes.taskcompletiondate, notes.taskcompletiontime, notes.notestatus, notes.notedelegation,
+               user_shares.username AS shared_username
+        FROM notes
+        LEFT JOIN user_shares ON notes.id = user_shares.note_id
+        WHERE (notes.fts_text @@ to_tsquery('english', $1) AND notes.owner = $2)
+           OR (user_shares.username = $1)
+    `
+    rows, err := a.db.Query(query, searchQuery, username)
     if err != nil {
         return nil, err
     }
-	
     defer rows.Close()
-	var notes []Note
-    for rows.Next() {
-        var id int
-        var title, noteType, description, taskCompletionDate, taskCompletionTime, noteStatus, noteDelegation string
-		var noteCreated time.Time
-        // Populate the note struct from the database result
-        if err := rows.Scan(&id, &title, &noteType, &description, &noteCreated, &taskCompletionDate, &taskCompletionTime, &noteStatus, &noteDelegation); err != nil {
-           
-			return nil, err
-        }
-		
-		var note Note
-		note.ID = id
-		note.Title = title
-		note.Description = description
-		note.NoteType = noteType
-		note.Description = description
-		note.NoteCreated = noteCreated
-		note.TaskCompletionDate.String = taskCompletionDate
-		note.TaskCompletionTime.String = taskCompletionTime
-		note.NoteStatus.String = noteStatus
-		note.NoteDelegation.String = noteDelegation
 
-		notes = append(notes, note)
-        
-        
+    var notes []Note
+    noteMap := make(map[int]*Note)
+
+    for rows.Next() {
+        var note Note
+        var sharedUsername sql.NullString
+
+        if err := rows.Scan(&note.ID, &note.Title, &note.NoteType, &note.Description, &note.NoteCreated,
+            &note.TaskCompletionDate.String, &note.TaskCompletionTime.String, &note.NoteStatus.String, &note.NoteDelegation.String, &sharedUsername); err != nil {
+            return nil, err
+        }
+
+        // Check if the note is already in the notes slice
+        existingNote, exists := noteMap[note.ID]
+        if !exists {
+            // If it doesn't exist, add it to the map and slice
+            notes = append(notes, note)
+            noteMap[note.ID] = &notes[len(notes)-1]
+            existingNote = noteMap[note.ID]
+        }
+
+        // If sharedUsername is not null, add it to the note's shared users
+        if sharedUsername.Valid {
+            sharedUser := UserShare{
+                Username: sharedUsername,
+            }
+            existingNote.SharedUsers = append(existingNote.SharedUsers, sharedUser)
+        }
     }
 
-
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
 
     return notes, nil
 }
+
 
 
 func (a *App) retrieveNotes(username string) ([]Note, error) {

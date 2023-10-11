@@ -36,6 +36,7 @@
                         <th>Status</th>
                         <th>Delegation</th>
                         <th>Actions</th>
+                        <th>Shared Users</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,6 +53,10 @@
                         <td>{{$note.NoteStatus.String}}</td>
                         <td>{{$note.NoteDelegation.String}}</td>
                         <td>
+                            {{range $sharedUser := $note.SharedUsers}}
+                            {{$sharedUser.Username.String}}, {{end}}
+                        </td>
+                        <td>
                             <button
                                 class="w3-btn w3-teal"
                                 onclick="updateTask(this);"
@@ -59,10 +64,10 @@
                                 data-title="{{$note.Title}}"
                                 data-description="{{$note.Description}}"
                                 data-notetype="{{$note.NoteType}}"
-                                data-completiontime="{{$note.TaskCompletionTime.String}}"
-                                data-completiondate="{{$note.TaskCompletionDate.String}}"
-                                data-notestatus="{{$note.NoteStatus.String}}"
-                                data-delegation="{{$note.NoteDelegation.String}}"
+                                data-completiontime="{{$note.TaskCompletionTime}}"
+                                data-completiondate="{{$note.TaskCompletionDate}}"
+                                data-notestatus="{{$note.NoteStatus}}"
+                                data-delegation="{{$note.NoteDelegation}}"
                             >
                                 Modify
                             </button>

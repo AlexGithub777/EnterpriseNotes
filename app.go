@@ -105,7 +105,7 @@ func (a *App) Initialize() {
     	noteDelegation TEXT, 
     	owner TEXT NOT NULL,
     	fts_text tsvector, 
-        FOREIGN KEY (owner) REFERENCES users (username) ON DELETE CASCADE
+        FOREIGN KEY (owner) REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE
     )` 
     
     _, err = a.db.Exec(createNotesTable)
@@ -121,8 +121,8 @@ func (a *App) Initialize() {
 		username TEXT,
 		privileges TEXT,
         PRIMARY KEY (username, note_id),
-        FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE,
-		FOREIGN KEY (username) REFERENCES users (username) ON DELETE CASCADE
+        FOREIGN KEY (note_id) REFERENCES notes (id)  ON UPDATE CASCADE ON DELETE CASCADE,
+		FOREIGN KEY (username) REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE
     )`
     
     _, err = a.db.Exec(createUserSharesTable)
