@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/icza/mighty v0.0.0-20230330133200-c4b03a294ed8 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
