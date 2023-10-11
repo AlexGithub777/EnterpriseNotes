@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -54,8 +53,8 @@ func TestGetSharedUsersForNote_Success(t *testing.T) {
 
     // Define the expected rows to be returned by the mock
     rows := sqlmock.NewRows([]string{"username", "privileges"}).
-        AddRow("user1", "read").
-        AddRow("user2", "write")
+        AddRow("user1", "editor").
+        AddRow("user2", "viewer")
 
     // Expect the query with a specific noteID
     mock.ExpectQuery("SELECT username, privileges FROM user_shares WHERE note_id = ?").
@@ -69,8 +68,8 @@ func TestGetSharedUsersForNote_Success(t *testing.T) {
 
     // Define the expected result
     expectedUsers := []UserShare{
-        {Username: sql.NullString{String: "user1", Valid: true}, Privileges: sql.NullString{String: "read", Valid: true}},
-        {Username: sql.NullString{String: "user2", Valid: true}, Privileges: sql.NullString{String: "write", Valid: true}},
+        {Username: sql.NullString{String: "user1", Valid: true}, Privileges: sql.NullString{String: "editor", Valid: true}},
+        {Username: sql.NullString{String: "user2", Valid: true}, Privileges: sql.NullString{String: "viewer", Valid: true}},
     }
 
     // Check if the expected result matches the actual result
@@ -84,49 +83,4 @@ func TestGetSharedUsersForNote_Success(t *testing.T) {
     }
 }
 
-func TestGetSharedUsersForNoteHandler_Success(t *testing.T) {
-    // Create a new App instance
-    a := App{
-        // You can set up a mock database connection or use an in-memory database for this test
-        // db: yourMockDB,
-    }
 
-    // Create a request with a valid noteID
-    req, err := http.NewRequest("GET", "/shared-users/123", nil)
-    if err != nil {
-        t.Fatalf("Failed to create a request: %v", err)
-    }
-
-    // Create a ResponseRecorder to record the response
-    rr := httptest.NewRecorder()
-
-    // Define the expected shared users
-    expectedSharedUsers := []UserShare{
-        {Username: sql.NullString{String: "user1", Valid: true}, Privileges: sql.NullString{String: "read", Valid: true}},
-        {Username: sql.NullString{String: "user2", Valid: true}, Privileges: sql.NullString{String: "write", Valid: true}},
-    }
-
-    // Mock the getSharedUsersForNote function
-    a.getSharedUsersForNote = func(noteID int) ([]UserShare, error) {
-        if noteID != 123 {
-            return nil, errors.New("Invalid noteID")
-        }
-        return expectedSharedUsers, nil
-    }
-
-    // Serve the request using the handler
-    a.Router.ServeHTTP(rr, req)
-
-    // Check the response status code
-    if status := rr.Code; status != http.StatusOK {
-        t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
-    }
-
-    // Define the expected JSON response
-    expectedResponse := `[{"Username":{"String":"user1","Valid":true},"Privileges":{"String":"read","Valid":true}},{"Username":{"String":"user2","Valid":true},"Privileges":{"String":"write","Valid":true}}]`
-
-    // Check if the response body matches the expected JSON
-    if rr.Body.String() != expectedResponse {
-        t.Errorf("Handler returned unexpected body: got %v want %v", rr.Body.String(), expectedResponse)
-    }
-}

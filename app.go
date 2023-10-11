@@ -35,7 +35,6 @@ type App struct {
 	db            *sql.DB
 	bindport      string
 	username      string
-	role          string
 }
 
 func (a *App) Initialize() {
