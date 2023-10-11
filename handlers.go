@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -16,7 +17,10 @@ import (
 
 
 func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
-    a.isAuthenticated(w, r)
+    if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
 
     sess := session.Get(r)
     username := "[guest]"
@@ -170,8 +174,6 @@ func (a *App) getSharedUsersForNoteHandler(w http.ResponseWriter, r *http.Reques
         return
     }
 
-	
-	
 
     // Fetch the shared users for the given noteID
     sharedUsers, err := a.getSharedUsersForNote(noteID)
