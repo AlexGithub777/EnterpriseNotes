@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -171,7 +170,7 @@ func (a *App) getSharedUsersForNoteHandler(w http.ResponseWriter, r *http.Reques
         http.Error(w, "Invalid noteID", http.StatusBadRequest)
         return
     }
-	fmt.Printf("%d", noteID)
+	
 
     // Fetch the shared users for the given noteID
     sharedUsers, err := a.getSharedUsersForNote(noteID)
@@ -205,7 +204,7 @@ func (a *App) getSharedUsersForNoteHandler(w http.ResponseWriter, r *http.Reques
 // Add the searchNotesHandler function
 func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
     searchQuery := r.FormValue("searchQuery")
-    fmt.Printf("%s", searchQuery)
+    
 	
 
     // Query your database using FTS to search for notes based on searchQuery
@@ -216,19 +215,7 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Print the search results to the console
-    for i, result := range results {
-        fmt.Printf("Result %d:\n", i+1)
-        fmt.Printf("ID: %d\n", result.ID)
-        fmt.Printf("Title: %s\n", result.Title)
-        fmt.Printf("NoteType: %s\n", result.NoteType)
-        fmt.Printf("Description: %s\n", result.Description)
-        fmt.Printf("NoteCreated: %s\n", result.NoteCreated)
-        fmt.Printf("TaskCompletionTime: %s (Valid: %t)\n", result.TaskCompletionTime.String, result.TaskCompletionTime.Valid)
-        fmt.Printf("TaskCompletionDate: %s (Valid: %t)\n", result.TaskCompletionDate.String, result.TaskCompletionDate.Valid)
-        fmt.Printf("NoteStatus: %s (Valid: %t)\n", result.NoteStatus.String, result.NoteStatus.Valid)
-        fmt.Printf("NoteDelegation: %s (Valid: %t)\n", result.NoteDelegation.String, result.NoteDelegation.Valid)
-    }
+    
     
     // Pass the shared notes with privileges to the template
     searchData := struct {
@@ -259,7 +246,7 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
 
     
     
-	fmt.Print(username)
+	
     rows, err := a.db.Query("SELECT id, title, notetype, description, notecreated, taskcompletiondate, taskcompletiontime, notestatus, notedelegation FROM notes WHERE fts_text @@ to_tsquery('english', $1) AND owner = $2", searchQuery, username)
     if err != nil {
         return nil, err
@@ -273,7 +260,7 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
 		var noteCreated time.Time
         // Populate the note struct from the database result
         if err := rows.Scan(&id, &title, &noteType, &description, &noteCreated, &taskCompletionDate, &taskCompletionTime, &noteStatus, &noteDelegation); err != nil {
-            fmt.Println("error")
+           
 			return nil, err
         }
 		
@@ -291,8 +278,7 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
 
 		notes = append(notes, note)
         
-        // Print the result to the console
-        fmt.Printf("Result - ID: %d, Title: %s, Description: %s, ... (add other fields)\n", id, title, description)
+        
     }
 
 
@@ -546,7 +532,7 @@ func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
     // Check if the note with the given ID exists
     var noteExists bool
     err = a.db.QueryRow("SELECT EXISTS(SELECT 1 FROM notes WHERE id = $1)", noteID).Scan(&noteExists)
-	fmt.Printf("%t\n", noteExists)
+	
     if err != nil {
         checkInternalServerError(err, w)
         return
