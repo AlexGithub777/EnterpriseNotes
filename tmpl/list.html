@@ -33,6 +33,11 @@
                                 <h3 class="w3-left w3-margin-right">
                                     Logged in as {{.Username}}
                                 </h3>
+                                <input
+                                    type="hidden"
+                                    id="username"
+                                    value="{{.Username}}"
+                                />
                                 <a
                                     href="#"
                                     onclick="document.getElementById('create-form').style.display='block'"
@@ -229,7 +234,6 @@
                                 <button
                                     class="w3-btn w3-red"
                                     onclick="openRemoveModal('{{$note.ID}}');"
-                                    data_username="{{.Username}}"
                                 >
                                     Remove
                                 </button>
@@ -756,6 +760,8 @@
             function openRemoveModal(noteID) {
                 document.getElementById("remove-form").style.display = "block";
                 document.getElementById("noteIdToRemove").value = noteID;
+                var username = document.getElementById("username").value;
+                document.getElementById("usernameToRemove").value = username;
             }
 
             function openOptions(button) {
