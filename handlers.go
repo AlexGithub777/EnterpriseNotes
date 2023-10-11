@@ -170,6 +170,8 @@ func (a *App) getSharedUsersForNoteHandler(w http.ResponseWriter, r *http.Reques
         http.Error(w, "Invalid noteID", http.StatusBadRequest)
         return
     }
+
+	
 	
 
     // Fetch the shared users for the given noteID
@@ -181,6 +183,92 @@ func (a *App) getSharedUsersForNoteHandler(w http.ResponseWriter, r *http.Reques
 
     // Marshal the sharedUsers slice into JSON
     responseJSON, err := json.Marshal(sharedUsers)
+    if err != nil {
+        http.Error(w, "Failed to encode JSON response", http.StatusInternalServerError)
+        return
+    }
+
+    // Set the Content-Type header to indicate JSON response
+    w.Header().Set("Content-Type", "application/json")
+
+    // Write the JSON response to the HTTP response writer
+    _, err = w.Write(responseJSON)
+    if err != nil {
+        http.Error(w, "Failed to write response", http.StatusInternalServerError)
+        return
+    }
+}
+
+func (a *App) getUnsharedUsersForNote(noteID int, username string) ([]User, error) {
+    // Initialize a slice to store unshared users
+    var unsharedUsers []User
+
+    
+
+    // Perform a database query to fetch users who have not been shared with the note
+    // and are not the current user
+    rows, err := a.db.Query("SELECT username FROM users WHERE username NOT IN (SELECT username FROM user_shares WHERE note_id = $1) AND username != $2", noteID, username)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var username string
+        // Populate the username from the database result
+        if err := rows.Scan(&username); err != nil {
+            return nil, err
+        }
+
+        // Create a User struct with the username
+        user := User{
+            Username: username,
+            // Add other user fields if needed
+        }
+
+        // Append the user to the unsharedUsers slice
+        unsharedUsers = append(unsharedUsers, user)
+    }
+
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return unsharedUsers, nil
+}
+
+
+func (a *App) getUnsharedUsersForNoteHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    noteIDStr, ok := vars["noteID"]
+    if !ok {
+        http.Error(w, "Missing noteID in URL", http.StatusBadRequest)
+        return
+    }
+
+    noteID, err := strconv.Atoi(noteIDStr)
+    if err != nil {
+        http.Error(w, "Invalid noteID", http.StatusBadRequest)
+        return
+    }
+
+	// Get the current username from the session
+    sess := session.Get(r)
+    username := "[guest]"
+
+    if sess != nil {
+        username = sess.CAttr("username").(string)
+    }
+
+    // Fetch the unshared users for the given noteID
+    unsharedUsers, err := a.getUnsharedUsersForNote(noteID, username)
+    if err != nil {
+        http.Error(w, "Failed to fetch unshared users: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Marshal the unsharedUsers slice into JSON
+    responseJSON, err := json.Marshal(unsharedUsers)
     if err != nil {
         http.Error(w, "Failed to encode JSON response", http.StatusInternalServerError)
         return

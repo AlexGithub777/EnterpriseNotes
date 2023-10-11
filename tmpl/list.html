@@ -562,13 +562,13 @@
                     <input type="hidden" id="taskIdToShare" name="Id" />
 
                     <label class="w3-label">Select User</label>
-                    <select class="w3-select" name="SharedUsername" required>
-                        <!-- Generate options from user data -->
-                        {{range $user := .AllUsers}}
-                        <option value="{{$user.Username}}">
-                            {{$user.Username}}
-                        </option>
-                        {{end}}
+                    <select
+                        class="w3-select"
+                        name="SharedUsername"
+                        required
+                        id="userDropdown"
+                    >
+                        <!-- Options will be populated using JavaScript -->
                     </select>
 
                     <label class="w3-label">Privileges</label>
@@ -821,6 +821,43 @@
                     },
                     error: function (error) {
                         console.log("Failed to fetch shared users: " + error);
+                    },
+                });
+
+                // Use AJAX to retrieve the list of unshared users
+                $.ajax({
+                    url: "/getUnsharedUsersForNote/" + noteId, // Replace with your server endpoint
+                    method: "GET",
+                    dataType: "json",
+                    success: function (data) {
+                        console.log("Received data:", data); // Log the data
+
+                        // Populate the dropdown with unshared users
+                        var userDropdown =
+                            document.getElementById("userDropdown");
+                        userDropdown.innerHTML = ""; // Clear existing options
+
+                        if (data && data.length > 0) {
+                            for (var i = 0; i < data.length; i++) {
+                                var user = data[i];
+                                console.log(
+                                    "Username[" + i + "]:",
+                                    user.username
+                                ); // Log the username
+
+                                var option = document.createElement("option");
+                                option.value = user.username;
+                                option.text = user.username;
+                                userDropdown.appendChild(option);
+                            }
+                        } else {
+                            console.error("No data received or data is empty");
+                        }
+                    },
+                    error: function (error) {
+                        console.error(
+                            "Failed to fetch unshared users: " + error
+                        );
                     },
                 });
 
