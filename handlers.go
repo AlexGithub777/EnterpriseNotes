@@ -3,19 +3,18 @@ package main
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/icza/session"
 )
 
-type noteData struct {
-	Username string
-	Notes    []Note
-}
+
 
 
 func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
@@ -26,8 +25,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 
     if sess != nil {
         username = sess.CAttr("username").(string)
-		a.username = username
-		
+        a.username = username
     }
 
     if r.Method != http.MethodGet {
@@ -57,10 +55,39 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // Fetch the list of shared users for each note
+    for i := range notes {
+        sharedUsers, err := a.getSharedUsersForNote(notes[i].ID)
+        if err != nil {
+            checkInternalServerError(err, w)
+            return
+        }
+        notes[i].SharedUsers = sharedUsers
+    }
+
     var funcMap = template.FuncMap{
         "addOne": func(i int) int {
             return i + 1
         },
+		"filterSharedUsers": func(sharedUsers []User) []User {
+			
+			var filteredUsers []User
+			for _, user := range allUsers {
+				found := false
+				for _, sharedUser := range sharedUsers {
+					if user.Username == sharedUser.Username {
+						found = true
+						break
+					}
+				}
+				if !found {
+					filteredUsers = append(filteredUsers, user)
+				}
+			}
+			return filteredUsers
+		},
+		
+		
     }
 
     // Pass the shared notes with privileges to the template
@@ -91,6 +118,89 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "text/html; charset=UTF-8")
     buf.WriteTo(w)
 }
+
+
+func (a *App) getSharedUsersForNote(noteID int) ([]UserShare, error) {
+    // Initialize a slice to store the shared users
+    var sharedUsers []UserShare
+
+    // Perform a database query to fetch shared users and their privileges for the given noteID
+    rows, err := a.db.Query("SELECT username, privileges FROM user_shares WHERE note_id = $1", noteID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var username sql.NullString
+        var privileges sql.NullString
+        // Populate the username and privileges from the database result
+        if err := rows.Scan(&username, &privileges); err != nil {
+            return nil, err
+        }
+
+        // Create a UserShare struct with the username and privileges
+        user := UserShare{
+            Username: username,
+            Privileges: privileges,
+            // Add other user fields if needed
+        }
+
+        // Append the user to the sharedUsers slice
+        sharedUsers = append(sharedUsers, user)
+    }
+
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return sharedUsers, nil
+}
+
+
+func (a *App) getSharedUsersForNoteHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    noteIDStr, ok := vars["noteID"]
+    if !ok {
+        http.Error(w, "Missing noteID in URL", http.StatusBadRequest)
+        return
+    }
+
+    noteID, err := strconv.Atoi(noteIDStr)
+    if err != nil {
+        http.Error(w, "Invalid noteID", http.StatusBadRequest)
+        return
+    }
+	fmt.Printf("%d", noteID)
+
+    // Fetch the shared users for the given noteID
+    sharedUsers, err := a.getSharedUsersForNote(noteID)
+    if err != nil {
+        http.Error(w, "Failed to fetching shared users: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Marshal the sharedUsers slice into JSON
+    responseJSON, err := json.Marshal(sharedUsers)
+    if err != nil {
+        http.Error(w, "Failed to encode JSON response", http.StatusInternalServerError)
+        return
+    }
+
+    // Set the Content-Type header to indicate JSON response
+    w.Header().Set("Content-Type", "application/json")
+
+    // Write the JSON response to the HTTP response writer
+    _, err = w.Write(responseJSON)
+    if err != nil {
+        http.Error(w, "Failed to write response", http.StatusInternalServerError)
+        return
+    }
+}
+
+
+
+
 
 // Add the searchNotesHandler function
 func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
@@ -192,36 +302,62 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
 
 
 func (a *App) retrieveNotes(username string) ([]Note, error) {
-	
-    rows, err := a.db.Query("SELECT * FROM notes WHERE owner = $1 ORDER BY id", username)
+    // Query to fetch notes and shared users' data
+    query := `
+        SELECT
+            n.*, u.username, us.privileges
+        FROM
+            notes n
+        LEFT JOIN
+            user_shares us ON n.id = us.note_id
+        LEFT JOIN
+            users u ON us.username = u.username
+        WHERE
+            n.owner = $1
+        ORDER BY
+            n.id
+    `
+
+    rows, err := a.db.Query(query, username)
     if err != nil {
         return nil, err
     }
 
-    var notes []Note
+    defer rows.Close()
+
+    notesMap := make(map[int]Note)
     for rows.Next() {
         var note Note
+        var sharedUser UserShare
+
         err := rows.Scan(
-            &note.ID,
-            &note.Title,
-            &note.NoteType,
-            &note.Description,
-            &note.NoteCreated,
-            &note.TaskCompletionTime,
-            &note.TaskCompletionDate,
-            &note.NoteStatus,
-            &note.NoteDelegation,
-            &note.Owner,
-            &note.FTSText,
+            &note.ID, &note.Title, &note.NoteType, &note.Description, &note.NoteCreated,
+            &note.TaskCompletionTime, &note.TaskCompletionDate, &note.NoteStatus,
+            &note.NoteDelegation, &note.Owner, &note.FTSText,
+            &sharedUser.Username, &sharedUser.Privileges,
         )
         if err != nil {
             return nil, err
         }
+
+        // Append shared users to the note
+        note.SharedUsers = append(note.SharedUsers, sharedUser)
+
+        // Store the note in a map using its ID as the key
+        notesMap[note.ID] = note
+    }
+
+    // Convert the map of notes to a slice
+    notes := make([]Note, 0, len(notesMap))
+    for _, note := range notesMap {
         notes = append(notes, note)
     }
 
     return notes, nil
 }
+
+
+
 
 func (a *App) retrieveSharedNotesWithPrivileges(username string) ([]Note, error) {
     rows, err := a.db.Query(`
@@ -398,7 +534,7 @@ func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
 	
 
     // Check if the shared user exists in the users table by username
-    var sharedUserID string // Change the type to string
+    var sharedUserID string 
     err := a.db.QueryRow("SELECT username FROM users WHERE username = $1", sharedUsername).Scan(&sharedUserID)
     if err != nil {
         // Handle the case where the shared user does not exist
@@ -461,14 +597,9 @@ func (a *App) removeSharedNoteHandler(w http.ResponseWriter, r *http.Request) {
 
     // Parse the note ID from the request
     noteID := r.FormValue("noteID")
+	username := r.FormValue("username")
 
-    // Get the username of the user who wants to remove the shared note
-    sess := session.Get(r)
-    username := "[guest]"
-
-    if sess != nil {
-        username = sess.CAttr("username").(string)
-    }
+    
 
     // Implement the logic to remove the shared note from the user_shares table
     err := a.removeSharedNoteFromUser(username, noteID)
@@ -493,6 +624,40 @@ func (a *App) removeSharedNoteFromUser(username string, noteID string) error {
 
     return nil
 }
+
+
+func (a *App) updatePrivilegesHandler(w http.ResponseWriter, r *http.Request) {
+    // Parse the POST data to retrieve the selected username and updated privileges
+    r.ParseForm()
+    selectedUsername := r.Form.Get("username")
+    updatedPrivileges := r.Form.Get("privileges")
+    noteID := r.Form.Get("noteID")
+
+    // Perform the database update to change privileges for the selected user and noteID
+    err := a.updateUserPrivileges(selectedUsername, updatedPrivileges, noteID)
+    if err != nil {
+        http.Error(w, "Failed to update privileges: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Redirect back to the list page after successfully updating privileges
+	// Somehow add user feedback
+    http.Redirect(w, r, "/list", http.StatusSeeOther)
+}
+
+func (a *App) updateUserPrivileges(selectedUsername, updatedPrivileges, noteID string) error {
+    // Prepare the SQL statement to update privileges for the selected user and noteID
+    query := "UPDATE user_shares SET privileges = $1 WHERE username = $2 AND note_id = $3"
+
+    _, err := a.db.Exec(query, updatedPrivileges, selectedUsername, noteID)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+
 
 /*func (a *App) getFilteredUsers(ownerUsername string, noteID int) ([]User, error) {
 	fmt.Print("hi")

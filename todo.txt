@@ -3,6 +3,7 @@
 - add ability to search a note based on shared users
 - add ability to search to include shared notes
 - fix checking if a note is already shared with a user
+- remove noteID and index, sort by most recent created?
 - simple erd for our database
 - get data import working
 - update UI - Done

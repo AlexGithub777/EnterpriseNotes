@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/icza/session"
 	_ "github.com/jackc/pgx/v5/stdlib" //use pgx in database/sql mode
 )
 
@@ -104,7 +105,7 @@ func (a *App) Initialize() {
     	noteDelegation TEXT, 
     	owner TEXT NOT NULL,
     	fts_text tsvector, 
-        FOREIGN KEY (owner) REFERENCES users (username)
+        FOREIGN KEY (owner) REFERENCES users (username) ON DELETE CASCADE
     )` 
     
     _, err = a.db.Exec(createNotesTable)
@@ -137,9 +138,14 @@ func (a *App) Initialize() {
 	//	log.Println("--- Importing demo data")
 	//	a.importData()
 	
+
 	
-	//set some defaults for the authentication to also support HTTP and HTTPS
-	a.setupAuth()
+
+	// Initialize the session manager - this is a global
+	// For testing purposes, we want cookies to be sent over HTTP too (not just HTTPS)
+	// refer to the auth.go for the authentication handlers using the sessions
+	session.Global.Close()
+	session.Global = session.NewCookieManagerOptions(session.NewInMemStore(), &session.CookieMngrOptions{AllowHTTP: true})
 
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
@@ -163,6 +169,11 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/search", a.searchNotesHandler).Methods("POST", "GET")
 	/*a.Router.HandleFunc("/share-note", a.shareNoteHandler).Methods("POST")*/
 	a.Router.HandleFunc("/remove-shared-note", a.removeSharedNoteHandler).Methods("POST")
+	a.Router.HandleFunc("/getSharedUsersForNote/{noteID:[0-9]+}", a.getSharedUsersForNoteHandler).Methods("GET")
+	a.Router.HandleFunc("/update-privileges", a.updatePrivilegesHandler).Methods("POST")
+
+
+
 
 	log.Println("Routes established")
 }
@@ -172,14 +183,10 @@ func (a *App) Run(addr string) {
 		a.bindport = addr
 	}
 
-	// get the local IP that has Internet connectivity
-	ip := GetOutboundIP()
-
-	log.Printf("Starting HTTP service on http://%s:%s", ip, a.bindport)
+	log.Printf("Starting HTTP service on %s", a.bindport)
 	// setup HTTP on gorilla mux for a gracefull shutdown
 	srv := &http.Server{
-		//Addr: "0.0.0.0:" + a.bindport,
-		Addr: ip + ":" + a.bindport,
+		Addr: "0.0.0.0:" + a.bindport,
 
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,

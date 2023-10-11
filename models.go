@@ -11,8 +11,8 @@ import (
 
 type UserShare struct {
 	NoteID int `json:"note_id"`
-	Username string `json: "username"`
-	Privileges string `json: privileges`
+	Username sql.NullString
+	Privileges sql.NullString
 }
 
 type Note struct {
@@ -28,6 +28,7 @@ type Note struct {
 	Owner              string    `json:"owner"`
 	FTSText            sql.NullString `json:"fts_text"`
 	Privileges         string
+	SharedUsers		   []UserShare
 }
 
 type User struct {
