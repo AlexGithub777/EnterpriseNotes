@@ -209,7 +209,7 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
         FROM notes
         LEFT JOIN user_shares ON notes.id = user_shares.note_id
         WHERE (notes.fts_text @@ plainto_tsquery('english', $1) AND notes.owner = $2)
-           OR (user_shares.username = $1)
+           OR (user_shares.username ILIKE $1)
     `
     rows, err := a.db.Query(query, searchQuery, username)
     if err != nil {
