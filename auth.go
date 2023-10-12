@@ -2,46 +2,89 @@ package main
 
 import (
 	"database/sql"
+	"html/template"
 	"log"
 	"net/http"
 
 	"github.com/icza/session"
 	"golang.org/x/crypto/bcrypt"
 )
+
 func (a *App) registerHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.ServeFile(w, r, "tmpl/register.html")
-		return
-	}
+    if r.Method != "POST" {
+        http.ServeFile(w, r, "tmpl/register.html")
+        return
+    }
 
-	// grab user info
-	username := r.FormValue("username")
-	password := r.FormValue("password")
+    // grab user info
+    username := r.FormValue("username")
+    password := r.FormValue("password")
 
-	// Check existence of user
-	var user User
-	err := a.db.QueryRow("SELECT username, password FROM users WHERE username=$1", username).Scan(&user.Username, &user.Password)
-	switch {
-	case err == sql.ErrNoRows:
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		checkInternalServerError(err, w)
-		// insert to database
-		_, err = a.db.Exec(`INSERT INTO users(username, password) VALUES($1, $2)`, username, hashedPassword)
-		checkInternalServerError(err, w)
-		http.Redirect(w, r, "/login", http.StatusSeeOther) // Redirect to the login page with a 303 status code
-	case err != nil:
-		http.Error(w, "loi: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+    // Check existence of user
+    var user User
+    err := a.db.QueryRow("SELECT username, password FROM users WHERE username=$1", username).Scan(&user.Username, &user.Password)
+    switch {
+    case err == sql.ErrNoRows:
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+        checkInternalServerError(err, w)
+        // insert to database
+        _, err = a.db.Exec(`INSERT INTO users(username, password) VALUES($1, $2)`, username, hashedPassword)
+        checkInternalServerError(err, w)
+
+        // After successful registration, set a cookie with the success message
+        http.SetCookie(w, &http.Cookie{
+            Name:  "success_message",
+            Value: "Registration was successful. Please log in.",
+            Path:  "/", // Set the path as needed
+        })
+        http.Redirect(w, r, "/login", http.StatusSeeOther)
+
+    case err != nil:
+        http.Error(w, "loi: "+err.Error(), http.StatusBadRequest)
+        return
+    }
 }
+
+
 
 
 func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Method %s", r.Method)
-	if r.Method != "POST" {
-		http.ServeFile(w, r, "tmpl/login.html")
-		return
-	}
+
+    // Check for a success message cookie
+    cookie, err := r.Cookie("success_message")
+    var successMessage string
+    if err == nil {
+        successMessage = cookie.Value
+
+        // Delete the cookie
+        deleteCookie := http.Cookie{Name: "success_message", MaxAge: -1, Path: "/"}
+        http.SetCookie(w, &deleteCookie)
+    }
+
+    if r.Method != "POST" {
+        // Serve the login page and include the success message
+        tmpl, err := template.ParseFiles("tmpl/login.html")
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+
+        // Define a data structure to hold template variables
+        data := struct {
+            SuccessMessage string
+        }{
+            SuccessMessage: successMessage,
+        }
+
+        // Execute the template and pass the data
+        err = tmpl.Execute(w, data)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+        }
+
+        return
+    }
 
 	// grab user info from the submitted form
 	username := r.FormValue("usrname")
@@ -50,7 +93,7 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// query database to get matching username
 	var user User
-	err := a.db.QueryRow("SELECT username, password FROM users WHERE username=$1",
+	err = a.db.QueryRow("SELECT username, password FROM users WHERE username=$1",
 		username).Scan(&user.Username, &user.Password)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -62,14 +105,7 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// validate password
-	/*
-		//simple unencrypted method
-		if user.Password != password {
-			http.Redirect(w, r, "/login", 301)
-			return
-		}
-	*/
+	
 
 	//password is encrypted
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
