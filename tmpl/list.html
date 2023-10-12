@@ -8,7 +8,7 @@
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <!--Importing jquery-->
 
-        <title>Task Manager</title>
+        <title>Enterprise Notes</title>
         <style>
             .hoverbtn:hover {
                 font-weight: bold;
@@ -26,7 +26,7 @@
                 <header class="w3-container w3-center w3-teal">
                     <div class="w3-row">
                         <div class="w3-half">
-                            <h3 class="w3-right">Task List</h3>
+                            <h3 class="w3-right">Enterprise Notes</h3>
                         </div>
                         <div class="w3-half w3-text-right">
                             <div class="w3-right">
@@ -73,8 +73,6 @@
                 >
                     <thead>
                         <tr>
-                            <th>Index</th>
-                            <th>ID</th>
                             <th>Title</th>
                             <th>Type</th>
                             <th>Description</th>
@@ -91,8 +89,6 @@
                     <tbody>
                         {{range $index, $note := .Notes}}
                         <tr>
-                            <td>{{addOne $index}}</td>
-                            <td>{{$note.ID}}</td>
                             <td>{{$note.Title}}</td>
                             <td>{{$note.NoteType}}</td>
                             <td>{{$note.Description}}</td>
@@ -167,8 +163,6 @@
                 >
                     <thead>
                         <tr>
-                            <th>Index</th>
-                            <th>ID</th>
                             <th>Title</th>
                             <th>Type</th>
                             <th>Description</th>
@@ -183,8 +177,6 @@
                     <tbody>
                         {{range $index, $note := .SharedNotes}}
                         <tr>
-                            <td>{{addOne $index}}</td>
-                            <td>{{$note.ID}}</td>
                             <td>{{$note.Title}}</td>
                             <td>{{$note.NoteType}}</td>
                             <td>{{$note.Description}}</td>
@@ -774,6 +766,12 @@
                     method: "GET",
                     dataType: "json",
                     success: function (data) {
+                        // Sort the shared users array by username
+                        data.sort(function (a, b) {
+                            var usernameA = a.Username.String.toLowerCase();
+                            var usernameB = b.Username.String.toLowerCase();
+                            return usernameA.localeCompare(usernameB);
+                        });
                         // Populate the modal with shared users' data
                         // For example:
                         var sharedUsersTable =
@@ -792,25 +790,29 @@
                                 user.Username.String +
                                 "</span>"; // Populate username
 
-                            var editorCell = row.insertCell(1);
-                            editorCell.innerHTML =
-                                "<input id='editorRadio' type='radio' name='updatedPrivileges_" +
-                                user.Username.String +
-                                "' value='editor' " +
-                                (user.Privileges.String === "editor"
-                                    ? "checked"
-                                    : "") +
-                                " />"; // Populate Editor radio button
+                            var editorRadio = row
+                                .insertCell(1)
+                                .appendChild(document.createElement("input"));
+                            editorRadio.id =
+                                "editorRadio_" + user.Username.String;
+                            editorRadio.type = "radio";
+                            editorRadio.name =
+                                "updatedPrivileges_" + user.Username.String;
+                            editorRadio.value = "editor";
+                            editorRadio.checked =
+                                user.Privileges.String === "editor";
 
-                            var viewerCell = row.insertCell(2);
-                            viewerCell.innerHTML =
-                                "<input id='viewerRadio' type='radio' name='updatedPrivileges_" +
-                                user.Username.String +
-                                "' value='viewer' " +
-                                (user.Privileges.String === "viewer"
-                                    ? "checked"
-                                    : "") +
-                                " />"; // Populate Viewer radio button
+                            var viewerRadio = row
+                                .insertCell(2)
+                                .appendChild(document.createElement("input"));
+                            viewerRadio.id =
+                                "viewerRadio_" + user.Username.String;
+                            viewerRadio.type = "radio";
+                            viewerRadio.name =
+                                "updatedPrivileges_" + user.Username.String;
+                            viewerRadio.value = "viewer";
+                            viewerRadio.checked =
+                                user.Privileges.String === "viewer";
 
                             var actionsCell = row.insertCell(3);
                             actionsCell.innerHTML =
@@ -821,7 +823,12 @@
                                 '">Stop Sharing</button>' +
                                 '<button class="w3-btn w3-teal" onclick="openApplyPrivilegeModal(' +
                                 noteId +
-                                ')">Apply Changes</button>';
+                                ", '" +
+                                user.Username.String +
+                                "', '" +
+                                user.Privileges.String +
+                                "')\">Apply Changes</button>";
+
                             // Populate Actions button
                         }
                     },
@@ -891,12 +898,22 @@
 
             function updatePrivileges() {
                 var selectedUsername =
-                    document.getElementById("selectedUsername").value; // Get the selected username
-                var updatedPrivileges = document.querySelector(
-                    'input[name="updatedPrivileges"]:checked'
-                ).value; // Get the selected privileges
+                    document.getElementById("selectedUsername").value;
+                var selectedPrivileges = document.querySelector(
+                    'input[name="updatedPrivileges_' +
+                        selectedUsername +
+                        '"]:checked'
+                );
 
-                if (updatedPrivileges) {
+                if (selectedPrivileges) {
+                    var updatedPrivileges = selectedPrivileges.value;
+
+                    // Set the values of the hidden fields in the form
+                    document.getElementById("usernametoUpdate").value =
+                        selectedUsername;
+                    document.getElementById("updatedPrivileges").value =
+                        updatedPrivileges;
+
                     // Make an AJAX request to update the privileges
                     $.ajax({
                         url: "/update-privileges",
@@ -922,16 +939,17 @@
                 }
             }
 
-            function openApplyPrivilegeModal(noteID) {
+            function openApplyPrivilegeModal(noteID, username) {
                 var noteId = noteID;
-                var username =
-                    document.getElementById("usernametoTake").innerText;
-
-                // Retrieve the radio button values
-                var editorRadio = document.getElementById("editorRadio");
-                var viewerRadio = document.getElementById("viewerRadio");
 
                 // Determine privileges based on the selected radio button
+                var editorRadio = document.getElementById(
+                    "editorRadio_" + username
+                );
+                var viewerRadio = document.getElementById(
+                    "viewerRadio_" + username
+                );
+
                 var privileges = "";
                 if (editorRadio.checked) {
                     privileges = "editor";
@@ -939,16 +957,7 @@
                     privileges = "viewer";
                 }
 
-                // Handle the case where no privilege is selected
-                if (privileges === "") {
-                    // Display a message or handle this case as needed
-                    alert("Please select a privilege before applying changes.");
-                    return;
-                }
-
-                // Now, 'privileges' contains the selected privilege ('editor', 'viewer', or an empty string)
-
-                // Set hidden fields in the Apply Privilege modal form
+                // Set the values of the hidden fields in the Apply Privilege modal form
                 document.getElementById("noteIdToUpdate").value = noteId;
                 document.getElementById("updatedPrivileges").value = privileges;
                 document.getElementById("usernametoUpdate").value = username;

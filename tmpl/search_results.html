@@ -5,28 +5,43 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="stylesheet" href="/statics/ionicons/css/w3.css" />
         <link rel="stylesheet" href="/statics/ionicons/css/ionicons.min.css" />
-        <title>Task Manager</title>
-        <style>
-            .hoverbtn:hover {
-                font-weight: bold;
-                opacity: 0.4;
-            }
-
-            a {
-                text-decoration: none;
-            }
-        </style>
+        <title>Enterprise Notes | Search Results</title>
     </head>
     <body>
+        <div class="w3-row-padding">
+            <div class="w3-card-2 w3-margin-top">
+                <header class="w3-container w3-center w3-teal">
+                    <div class="w3-row">
+                        <div class="w3-quarter">
+                            <a
+                                href="/list"
+                                class="w3-left"
+                                style="margin-top: 15px; margin-bottom: 15px"
+                            >
+                                <!-- Change button color to w3-blue -->
+                                <i class="ion-ios-arrow-back"></i> Back to List
+                            </a>
+                        </div>
+                        <div class="w3-half">
+                            <h3 class="w3-center">Enterprise Notes</h3>
+                        </div>
+                    </div>
+                </header>
+            </div>
+        </div>
+
         <div>
-            <h3>Search Results</h3>
+            <!-- Add a back button -->
+
+            <h3 class="w3-margin-left">
+                Search Results for "{{.SearchQuery}}"
+            </h3>
+
             <table
                 class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
             >
                 <thead>
                     <tr>
-                        <th>Index</th>
-                        <th>ID</th>
                         <th>Title</th>
                         <th>Type</th>
                         <th>Description</th>
@@ -35,15 +50,13 @@
                         <th>Completion Date</th>
                         <th>Status</th>
                         <th>Delegation</th>
-                        <th>Actions</th>
                         <th>Shared Users</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{range $index, $note := .SearchResults}}
                     <tr>
-                        <td>{{$index}}</td>
-                        <td>{{$note.ID}}</td>
                         <td>{{$note.Title}}</td>
                         <td>{{$note.NoteType}}</td>
                         <td>{{$note.Description}}</td>
