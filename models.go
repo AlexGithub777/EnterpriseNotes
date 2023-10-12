@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -193,11 +194,15 @@ func importNotesData(a *App, row []string) error {
     noteStatus := row[5]
     noteDelegation := row[6]
     owner := row[7]
-    ftsText := row[8]
+    
+    // Calculate fts_text using to_tsvector
+    ftsText := fmt.Sprintf("%s %s %s %s %s %s %s %s", title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner)
 
-    _, err := a.db.Exec("INSERT INTO notes (title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner, fts_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)", title, noteType, description,taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner, ftsText)
+    _, err := a.db.Exec("INSERT INTO notes (title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner, fts_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8, to_tsvector('english', $9))", title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner, ftsText)
+
     return err
 }
+
 
 
 /*
