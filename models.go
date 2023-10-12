@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"log"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -67,9 +66,9 @@ func (a *App) importData() error {
 
 	// Drop foreign key constraints if they exist
 	dropFKConstraintsSQL := `
-	ALTER TABLE IF EXISTS "user_shares" DROP CONSTRAINT IF EXISTS user_shares_note_id_fkey;
-	ALTER TABLE IF EXISTS "user_shares" DROP CONSTRAINT IF EXISTS fk_username;
-	ALTER TABLE IF EXISTS "notes" DROP CONSTRAINT IF EXISTS fk_owner;
+	ALTER TABLE IF EXISTS user_shares DROP CONSTRAINT IF EXISTS user_shares_note_id_fkey;
+	ALTER TABLE IF EXISTS user_shares DROP CONSTRAINT IF EXISTS user_shares_username_fkey;
+	ALTER TABLE IF EXISTS notes DROP CONSTRAINT IF EXISTS notes_owner_fkey;
 	
 	`
 
@@ -84,8 +83,9 @@ func (a *App) importData() error {
 
 	// Drop tables if they exist
 	dropTablesSQL := `
-	DROP TABLE IF EXISTS "notes";
-	DROP TABLE IF EXISTS "user_shares";
+	DROP TABLE IF EXISTS user_shares;
+	DROP TABLE IF EXISTS notes;
+	
 	`
 
 	_, err = a.db.Exec(dropTablesSQL)
@@ -120,7 +120,7 @@ func (a *App) importData() error {
         username TEXT,
         privileges TEXT,
         PRIMARY KEY (username, note_id),
-        FOREIGN KEY (note_id) REFERENCES notes (id)  ON UPDATE CASCADE ON DELETE CASCADE,
+		FOREIGN KEY (note_id) REFERENCES notes (id) ON UPDATE CASCADE ON DELETE CASCADE,
         FOREIGN KEY (username) REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE
     );
 
@@ -146,11 +146,15 @@ func (a *App) importData() error {
         log.Fatal(err)
     }
 
-    /* // Prepare the user_shares insert query
-    userSharesStmt, err := a.db.Prepare("INSERT INTO user_shares (note_id, username, privileges) VALUES($1,$2,$3)")
-    if err != nil {
-        log.Fatal(err)
-    }*/
+	
+   
+	/*// Prepare the user_shares insert query
+	userSharesStmt, err := a.db.Prepare("INSERT INTO user_shares (note_id, username, privileges) VALUES($1, $2, $3)")
+	if err != nil {
+		log.Fatal(err)
+	}*/
+
+
 
     // Import data from CSV files
     importDataFromCSV(a, "data/notes.csv", notesStmt, importNotesData)
@@ -196,15 +200,47 @@ func importNotesData(a *App, row []string) error {
 }
 
 
+/*
 func importUserSharesData(a *App, row []string) error {
-    noteID, err := strconv.Atoi(row[0])
-    if err != nil {
-        return err
-    }
+    // 1. Ensure Data Integrity
+	// Verify that the data in the user_shares table aligns with the referenced tables (notes and users).
+	
+	// Drop foreign key constraints if they exist
+	dropFKConstraintsSQL := `
+	ALTER TABLE IF EXISTS user_shares DROP CONSTRAINT IF EXISTS user_shares_note_id_fkey;
+	ALTER TABLE IF EXISTS user_shares DROP CONSTRAINT IF EXISTS user_shares_username_fkey;
+	ALTER TABLE IF EXISTS notes DROP CONSTRAINT IF EXISTS notes_owner_fkey;
+	
+	`
 
-    _, err = a.db.Exec("INSERT INTO user_shares (note_id, username, privileges) VALUES($1,$2,$3)", noteID, row[1], row[2])
+	_, err := a.db.Exec(dropFKConstraintsSQL)
+	if err != nil {
+		log.Println("Error dropping foreign key constraints:", err)
+	} else {
+		log.Printf("Foreign key constraints dropped.")
+	}
+	
+
+	
+	
+
+	// 3. Insert Data
+	noteID, err := strconv.Atoi(row[0])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = a.db.Exec("INSERT INTO user_shares (note_id, username, privileges) VALUES($1, $2, $3)", noteID, row[1], row[2])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	
+
     return err
 }
+*/
+
 
 
 

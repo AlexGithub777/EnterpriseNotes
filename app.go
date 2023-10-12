@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"database/sql"
+
 	"log"
 	"net/http"
 	"os"
@@ -14,26 +14,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib" //use pgx in database/sql mode
 )
 
-// PostgreSQl configuration if not passed as env variables
-const (
-	host     = "localhost" //127.0.0.1
-	port     = 5432
-	user     = "postgres"
-	password = ""
-	dbname   = "postgres"
-)
 
-var (
-	err  error
-	wait time.Duration
-)
-
-type App struct {
-	Router        *mux.Router
-	db            *sql.DB
-	bindport      string
-	username      string
-}
 
 func (a *App) Initialize() {
     // Create the database connection

@@ -1,2 +1,5 @@
 note_id, username, privileges
-1, bigdog, editor 
+1, BIGCAT, editor 
+2, BIGCAT, viewer
+3, mydog7, editor 
+4, mydog7, viewer
