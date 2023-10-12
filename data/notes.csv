@@ -1,4 +1,4 @@
-id,title,noteType,description,noteCreated,taskCompletionTime,taskCompletionDate,noteStatus,noteDelegation,owner,fts_text
-1,Meeting with Client,Note,Discuss project details,2023-09-25 09:00:00,,2023-09-26,In Progress,,mydog7,''
-
+title,noteType,description,taskCompletionTime,taskCompletionDate,noteStatus,noteDelegation,owner,fts_text
+"Meeting with Client","Task","Discuss project details","02:00 PM","23-10-2024","In progress","bigdog7","mydog7",NULL
+"Visit Mum","Note","Go shopping",NULL,NULL,NULL,NULL,"mydog7",NULL
 

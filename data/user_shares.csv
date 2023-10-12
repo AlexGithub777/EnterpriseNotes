@@ -1,1 +1,2 @@
-2, 1 
+note_id, username, privileges
+1, bigdog, editor 
