@@ -34,7 +34,7 @@ type Note struct {
 type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Role     int    `json:"role"`
+	
 }
 
 
@@ -93,7 +93,7 @@ func (a *App) importData() error {
 	if err != nil {
 		log.Println("Error dropping tables:", err)
 	} else {
-		log.Printf("Tables notes, user_shares, and users dropped.")
+		log.Printf("Tables notes and user_shares dropped.")
 	}
 
 	
@@ -101,6 +101,11 @@ func (a *App) importData() error {
 
     // Create table as required, along with attribute constraints
     createTablesSQL := `
+    CREATE TABLE IF NOT EXISTS "users" (
+        username TEXT UNIQUE PRIMARY KEY NOT NULL,
+        password TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS "notes" (
         id SERIAL PRIMARY KEY NOT NULL,
         title TEXT NOT NULL,
@@ -113,7 +118,7 @@ func (a *App) importData() error {
         noteDelegation TEXT,
         owner TEXT,
         fts_text tsvector,
-		FOREIGN KEY (owner) REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE
+        FOREIGN KEY (owner) REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS "user_shares" (
@@ -121,16 +126,10 @@ func (a *App) importData() error {
         username TEXT,
         privileges TEXT,
         PRIMARY KEY (username, note_id),
-		FOREIGN KEY (note_id) REFERENCES notes (id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (note_id) REFERENCES notes (id) ON UPDATE CASCADE ON DELETE CASCADE,
         FOREIGN KEY (username) REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE
     );
-
-    CREATE TABLE IF NOT EXISTS "users" (
-        username TEXT UNIQUE PRIMARY KEY NOT NULL,
-        password TEXT NOT NULL,
-        role INTEGER NOT NULL
-    );
-    `
+`
 
     _, err = a.db.Exec(createTablesSQL)
 	if err != nil {
