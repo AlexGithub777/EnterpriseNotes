@@ -16,54 +16,77 @@ func (a *App) registerHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // grab user info
+    // Grab user info
     username := r.FormValue("username")
     password := r.FormValue("password")
 
     // Check existence of user
-    var user User
-    err := a.db.QueryRow("SELECT username, password FROM users WHERE username=$1", username).Scan(&user.Username, &user.Password)
-    switch {
-    case err == sql.ErrNoRows:
-        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-        checkInternalServerError(err, w)
-        // insert to database
-        _, err = a.db.Exec(`INSERT INTO users(username, password) VALUES($1, $2)`, username, hashedPassword)
-        checkInternalServerError(err, w)
-
-        // After successful registration, set a cookie with the success message
+    var existingUser User
+    err := a.db.QueryRow("SELECT username FROM users WHERE username=$1", username).Scan(&existingUser.Username)
+    
+    // Check for errors
+    if err == nil {
+        // User already exists, set a cookie with the error message
         http.SetCookie(w, &http.Cookie{
-            Name:  "success_message",
-            Value: "Registration was successful. Please log in.",
+            Name:  "message",
+            Value: "User already exists",
             Path:  "/", // Set the path as needed
         })
         http.Redirect(w, r, "/login", http.StatusSeeOther)
-
-    case err != nil:
-        http.Error(w, "loi: "+err.Error(), http.StatusBadRequest)
+        return
+    } else if err != sql.ErrNoRows {
+        // An unexpected error occurred
+        http.SetCookie(w, &http.Cookie{
+            Name:  "message",
+            Value: "Error checking user existence",
+            Path:  "/", // Set the path as needed
+        })
+        http.Redirect(w, r, "/login", http.StatusSeeOther)
         return
     }
+
+    // User doesn't exist, proceed with registration
+    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    checkInternalServerError(err, w)
+    // Insert the user into the database
+    _, err = a.db.Exec("INSERT INTO users(username, password) VALUES($1, $2)", username, hashedPassword)
+    if err != nil {
+        // Registration failed, set a cookie with the error message
+        http.SetCookie(w, &http.Cookie{
+            Name:  "message",
+            Value: "Error registering user: " + err.Error(),
+            Path:  "/", // Set the path as needed
+        })
+        http.Redirect(w, r, "/login", http.StatusSeeOther)
+        return
+    }
+
+    // Registration was successful, set a cookie with the success message
+    http.SetCookie(w, &http.Cookie{
+        Name:  "message",
+        Value: "Registration was successful. Please log in.",
+        Path:  "/", // Set the path as needed
+    })
+    http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 
-
-
 func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Method %s", r.Method)
+    log.Printf("Method %s", r.Method)
 
-    // Check for a success message cookie
-    cookie, err := r.Cookie("success_message")
-    var successMessage string
+    // Check for a message cookie
+    cookie, err := r.Cookie("message")
+    var message string
     if err == nil {
-        successMessage = cookie.Value
+        message = cookie.Value
 
         // Delete the cookie
-        deleteCookie := http.Cookie{Name: "success_message", MaxAge: -1, Path: "/"}
+        deleteCookie := http.Cookie{Name: "message", MaxAge: -1, Path: "/"}
         http.SetCookie(w, &deleteCookie)
     }
 
     if r.Method != "POST" {
-        // Serve the login page and include the success message
+        // Serve the login page and include the message
         tmpl, err := template.ParseFiles("tmpl/login.html")
         if err != nil {
             http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -72,9 +95,9 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 
         // Define a data structure to hold template variables
         data := struct {
-            SuccessMessage string
+            Message string
         }{
-            SuccessMessage: successMessage,
+            Message: message,
         }
 
         // Execute the template and pass the data
@@ -86,45 +109,53 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	// grab user info from the submitted form
-	username := r.FormValue("usrname")
-	password := r.FormValue("psw")
-	
+    // grab user info from the submitted form
+    username := r.FormValue("usrname")
+    password := r.FormValue("psw")
 
-	// query database to get matching username
-	var user User
-	err = a.db.QueryRow("SELECT username, password FROM users WHERE username=$1",
-		username).Scan(&user.Username, &user.Password)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// Handle the case where no user with that username was found.
-			http.Redirect(w, r, "/login", 301)
-			return
-		}
-		checkInternalServerError(err, w)
-		return
-	}
+    // query database to get matching username
+    var user User
+    err = a.db.QueryRow("SELECT username, password FROM users WHERE username=$1", username).Scan(&user.Username, &user.Password)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            // Handle the case where no user with that username was found.
+            // Set an error message
+            http.SetCookie(w, &http.Cookie{
+                Name:  "message",
+                Value: "User not found.",
+                Path:  "/", // Set the path as needed
+            })
+            http.Redirect(w, r, "/login", http.StatusSeeOther)
+            return
+        }
 
-	
+        checkInternalServerError(err, w)
+        return
+    }
 
-	//password is encrypted
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		http.Redirect(w, r, "/login", 301)
-		return
-	}
+    // password is encrypted
+    err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+    if err != nil {
+        // Password does not match
+        // Set an error message
+        http.SetCookie(w, &http.Cookie{
+            Name:  "message",
+            Value: "Invalid username or password.",
+            Path:  "/", // Set the path as needed
+        })
+        http.Redirect(w, r, "/login", http.StatusSeeOther)
+        return
+    }
 
-	// Successful login. New session with initial constant and variable attributes
-	sess := session.NewSessionOptions(&session.SessOptions{
-		CAttrs: map[string]interface{}{"username": user.Username},
-		Attrs:  map[string]interface{}{"count": 1},
-	})
-	session.Add(sess, w)
-	
-	
-	http.Redirect(w, r, "/list", 301)
-
+    // Successful login. New session with initial constant and variable attributes
+    sess := session.NewSessionOptions(&session.SessOptions{
+        CAttrs: map[string]interface{}{"username": user.Username},
+        Attrs:  map[string]interface{}{"count": 1},
+    })
+    session.Add(sess, w)
+    http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
+
 
 func (a *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 
