@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserShare struct {
@@ -84,6 +86,7 @@ func (a *App) importData() error {
 
 	// Drop tables if they exist
 	dropTablesSQL := `
+	DROP TABLE IF EXISTS users;
 	DROP TABLE IF EXISTS user_shares;
 	DROP TABLE IF EXISTS notes;
 	
@@ -139,6 +142,25 @@ func (a *App) importData() error {
 	}
 
     log.Printf("Inserting data...")
+
+	// Insert two users with hashed passwords
+    hashedPasswordMydog7, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+    if err != nil {
+        log.Fatal(err)
+    }
+    _, err = a.db.Exec("INSERT INTO users(username, password) VALUES($1, $2)", "mydog7", hashedPasswordMydog7)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    hashedPasswordBIGCAT, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+    if err != nil {
+        log.Fatal(err)
+    }
+    _, err = a.db.Exec("INSERT INTO users(username, password) VALUES($1, $2)", "BIGCAT", hashedPasswordBIGCAT)
+    if err != nil {
+        log.Fatal(err)
+    }
 
     // Prepare the notes insert query
     notesStmt, err := a.db.Prepare("INSERT INTO notes (title, noteType, description, owner) VALUES($1,$2,$3,$4)")
