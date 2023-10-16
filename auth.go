@@ -164,7 +164,7 @@ func (a *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("User %s", s.CAttr("username").(string))
 	session.Remove(s, w)
 	s = nil
-
+    session.Get()
 	http.Redirect(w, r, "/login", 301)
 }
 

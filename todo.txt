@@ -10,4 +10,4 @@
 - update create modal to match edit modal - Done
 - Assign Drop down menus to appropriate modals - Done
 
-look at jobs tradie for parrsing url params
+include limitations in documemtation - e.g do we have sql injection protection, cors protection
