@@ -20,37 +20,64 @@ func (a *App) registerHandler(w http.ResponseWriter, r *http.Request) {
     username := r.FormValue("username")
     password := r.FormValue("password")
 
-    // Check existence of user
-    var existingUser User
-    err := a.db.QueryRow("SELECT username FROM users WHERE username=$1", username).Scan(&existingUser.Username)
-    
-    // Check for errors
-    if err == nil {
-        // User already exists, set a cookie with the error message
+    // Prepare the SELECT statement to check if the user already exists
+	selectStmt, err := a.db.Prepare("SELECT username FROM users WHERE username = $1")
+	if err != nil {
+		// Handle the error
+		http.SetCookie(w, &http.Cookie{
+			Name:  "message",
+			Value: "Error preparing SELECT statement: " + err.Error(),
+			Path:  "/", // Set the path as needed
+		})
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	defer selectStmt.Close() // Close the prepared statement when done with it
+
+	// Execute the SELECT query
+	var existingUser User
+	err = selectStmt.QueryRow(username).Scan(&existingUser.Username)
+
+	if err == nil {
+		// User already exists, set a cookie with the error message
+		http.SetCookie(w, &http.Cookie{
+			Name:  "message",
+			Value: "User already exists",
+			Path:  "/", // Set the path as needed
+		})
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+
+	} else if err != sql.ErrNoRows {
+		// An unexpected error occurred
+		http.SetCookie(w, &http.Cookie{
+			Name:  "message",
+			Value: "Error checking user existence: " + err.Error(),
+			Path:  "/", // Set the path as needed
+		})
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+    // User doesn't exist, proceed with registration
+    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    checkInternalServerError(err, w)
+    // Prepare the Insert stmt to Insert the user into the database
+	InsertStmt, err := a.db.Prepare(`INSERT INTO users(username, password) VALUES($1, $2)`)
+    if err != nil {
+        // Registration failed, set a cookie with the error message
         http.SetCookie(w, &http.Cookie{
             Name:  "message",
-            Value: "User already exists",
-            Path:  "/", // Set the path as needed
-        })
-        http.Redirect(w, r, "/login", http.StatusSeeOther)
-        return
-    } else if err != sql.ErrNoRows {
-        // An unexpected error occurred
-        http.SetCookie(w, &http.Cookie{
-            Name:  "message",
-            Value: "Error checking user existence",
+            Value: "Error registering user: " + err.Error(),
             Path:  "/", // Set the path as needed
         })
         http.Redirect(w, r, "/login", http.StatusSeeOther)
         return
     }
 
-    // User doesn't exist, proceed with registration
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-    checkInternalServerError(err, w)
-    // Insert the user into the database
-    _, err = a.db.Exec("INSERT INTO users(username, password) VALUES($1, $2)", username, hashedPassword)
-    if err != nil {
+	// Insert user, with username and password into db
+	_, err = InsertStmt.Exec(username, hashedPassword)
+	if err != nil {
         // Registration failed, set a cookie with the error message
         http.SetCookie(w, &http.Cookie{
             Name:  "message",
@@ -149,22 +176,24 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 
     // Successful login. New session with initial constant and variable attributes
     sess := session.NewSessionOptions(&session.SessOptions{
-        CAttrs: map[string]interface{}{"username": user.Username},
+        CAttrs: map[string]interface{}{"username": user.Username, "userid" : user.Id},
         Attrs:  map[string]interface{}{"count": 1},
     })
     session.Add(sess, w)
     http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
 
-
 func (a *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
-
-	// get the current session variables
+	// Get the current session variables
 	s := session.Get(r)
-	log.Printf("User %s", s.CAttr("username").(string))
+	username := s.CAttr("username").(string)
+	log.Printf("User %s has been logged out", username)
+
+	// Remove the session
 	session.Remove(s, w)
 	s = nil
-    session.Get()
+
+	// Redirect the user to the login page with a temporary (302) redirect
 	http.Redirect(w, r, "/login", 301)
 }
 
@@ -189,10 +218,11 @@ func (a *App) isAuthenticated(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// Initialize the session manager - this is a global
-// For testing purposes, we want cookies to be sent over HTTP too (not just HTTPS)
-// refer to the auth.go for the authentication handlers using the sessions
 func (a *App) setupAuth() {
+	// Initialize the session manager - this is a global
+	// For testing purposes, we want cookies to be sent over HTTP too (not just HTTPS)
+	// refer to the auth.go for the authentication handlers using the sessions
 	session.Global.Close()
 	session.Global = session.NewCookieManagerOptions(session.NewInMemStore(), &session.CookieMngrOptions{AllowHTTP: true})
+
 }
