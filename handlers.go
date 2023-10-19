@@ -23,7 +23,6 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
 
     if sess != nil {
         username = sess.CAttr("username").(string)
-        a.username = username
     }
 
     if r.Method != http.MethodGet {
@@ -182,10 +181,17 @@ func (a *App) getUnsharedUsersForNoteHandler(w http.ResponseWriter, r *http.Requ
 func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
 	a.isAuthenticated(w, r)
 
+	sess := session.Get(r)
+    username := "[guest]"
+
+    if sess != nil {
+        username = sess.CAttr("username").(string)
+    }
+
     searchQuery := r.FormValue("searchQuery")
 
     // Query your database using FTS to search for notes based on searchQuery
-    results, err := a.searchNotesInDatabase(searchQuery, a.username)
+    results, err := a.searchNotesInDatabase(searchQuery, username)
     if err != nil {
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
