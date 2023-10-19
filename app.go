@@ -9,8 +9,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/icza/session"
 	_ "github.com/jackc/pgx/v5/stdlib" //use pgx in database/sql mode
 )
 
@@ -25,13 +23,11 @@ func (a *App) Initialize() {
     a.db = db
 
     a.importData()
+	
 
-    // Initialize the session manager
-    session.Global.Close()
-    session.Global = session.NewCookieManagerOptions(session.NewInMemStore(), &session.CookieMngrOptions{AllowHTTP: true})
-
-    a.Router = mux.NewRouter()
+    
     a.initializeRoutes()
+	a.setupAuth()
 
 	// Set the bindport directly here
     a.bindport = "8080"  // Default value

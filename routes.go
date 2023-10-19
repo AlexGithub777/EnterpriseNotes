@@ -3,9 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func (a *App) initializeRoutes() {
+	a.Router = mux.NewRouter()
 	// setup static content route - strip ./assets/assets/[resource]
 	// to keep /assets/[resource] as a route
 	staticFileDirectory := http.Dir("./statics/")

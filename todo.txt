@@ -11,3 +11,10 @@
 - Assign Drop down menus to appropriate modals - Done
 
 include limitations in documemtation - e.g do we have sql injection protection, cors protection
+
+sanity checks on db when updating notes,
+
+display delgated notes in my notes add to where notes.owner or note.notedelegation 
+use sql prepare in query whereever $! (a field)
+
+REDIRECT TO STATIC LOGOUT.HTML 
