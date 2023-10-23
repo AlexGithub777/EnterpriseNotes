@@ -16,7 +16,7 @@ func (a *App) initializeRoutes() {
 	a.Router.PathPrefix("/statics/").Handler(staticFileHandler).Methods("GET")
 	a.Router.HandleFunc("/", a.indexHandler).Methods("GET")
 	a.Router.HandleFunc("/login", a.loginHandler).Methods("POST", "GET")
-	a.Router.HandleFunc("/logout", a.logoutHandler).Methods("GET")
+	a.Router.HandleFunc("/user-logout", a.logoutHandler).Methods("GET")
 	a.Router.HandleFunc("/register", a.registerHandler).Methods("POST", "GET")
 	a.Router.HandleFunc("/list", a.listHandler).Methods("GET")
 	a.Router.HandleFunc("/create", a.createHandler).Methods("POST", "GET")

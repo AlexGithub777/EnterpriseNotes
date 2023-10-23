@@ -24,10 +24,10 @@ func (a *App) Initialize() {
 
     a.importData()
 	
-
+	a.setupAuth()
     
     a.initializeRoutes()
-	a.setupAuth()
+	
 
 	// Set the bindport directly here
     a.bindport = "8080"  // Default value
