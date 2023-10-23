@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 func (a *App) retrieveNotes(username string) ([]Note, error) {
@@ -357,4 +358,67 @@ func (a *App) updateUserPrivileges(selectedUsername, updatedPrivileges, noteID s
     }
 
     return nil
+}
+
+type SearchResult struct {
+    Count       int
+    Description string
+}
+
+func (a *App) findTextInNote(noteID int, searchPattern string) ([]SearchResult, error) {
+    // Fetch the note with the given ID to access the title and description
+    note, err := a.getNoteByID(noteID)
+    if err != nil {
+        return nil, err
+    }
+
+    // Count occurrences in the title and description
+    titleOccurrences := countOccurrences(note.Title, searchPattern)
+    descriptionOccurrences := countOccurrences(note.Description, searchPattern)
+
+    results := []SearchResult{}
+
+    if titleOccurrences > 0 {
+        results = append(results, SearchResult{
+            Count:       titleOccurrences,
+            Description: "Title",
+        })
+    }
+
+    if descriptionOccurrences > 0 {
+        results = append(results, SearchResult{
+            Count:       descriptionOccurrences,
+            Description: "Description",
+        })
+    }
+
+    return results, nil
+}
+
+
+
+// countOccurrences counts the number of occurrences of a searchPattern in a text.
+func countOccurrences(text, searchPattern string) int {
+    // Implement your logic to count occurrences. You can use strings.Count or regular expressions.
+    // Here's a simple example using strings.Count:
+    count := strings.Count(strings.ToLower(text), strings.ToLower(searchPattern))
+    return count
+}
+
+
+
+
+func (a *App) getNoteByID(noteID int) (*Note, error) {
+    // You need to implement the logic to retrieve the note from your database.
+    // Here's a simplified example assuming you have a database connection and a "notes" table.
+    
+    // Query the database to retrieve the note.
+    var note Note
+    err := a.db.QueryRow("SELECT id, title, description FROM notes WHERE id = $1", noteID).Scan(&note.ID, &note.Title, &note.Description)
+    if err != nil {
+        return nil, err
+    }
+
+    // Return the retrieved note.
+    return &note, nil
 }

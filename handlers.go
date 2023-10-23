@@ -382,6 +382,49 @@ func (a *App) updatePrivilegesHandler(w http.ResponseWriter, r *http.Request) {
     http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
 
+func (a *App) findInNoteHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    noteIDStr, ok := vars["noteID"]
+    if !ok {
+        http.Error(w, "Missing noteID in URL", http.StatusBadRequest)
+        return
+    }
+
+    noteID, err := strconv.Atoi(noteIDStr)
+    if err != nil {
+        http.Error(w, "Invalid noteID", http.StatusBadRequest)
+        return
+    }
+
+	searchPattern := r.FormValue("searchInput")
+
+    // Implement your search logic to find text in the note with the given noteID.
+    // This could involve searching in your data store, such as a database, for the specified text pattern.
+    searchResults, err := a.findTextInNote(noteID, searchPattern)
+    if err != nil {
+        http.Error(w, "Failed to find text in note: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Marshal the searchResults into JSON
+    responseJSON, err := json.Marshal(searchResults)
+    if err != nil {
+        http.Error(w, "Failed to encode JSON response", http.StatusInternalServerError)
+        return
+    }
+
+    // Set the Content-Type header to indicate JSON response
+    w.Header().Set("Content-Type", "application/json")
+
+    // Write the JSON response to the HTTP response writer
+    _, err = w.Write(responseJSON)
+    if err != nil {
+        http.Error(w, "Failed to write response", http.StatusInternalServerError)
+        return
+    }
+}
+
+
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	a.isAuthenticated(w, r)

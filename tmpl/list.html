@@ -124,6 +124,14 @@
                             </td>
                             <td>
                                 <button
+                                    class="w3-btn w3-green"
+                                    onclick="openFindModal(this);"
+                                    find-noteID="{{$note.ID}}"
+                                >
+                                    Find
+                                </button>
+
+                                <button
                                     class="w3-btn w3-teal"
                                     onclick="updateTask(this);"
                                     data-noteid="{{$note.ID}}"
@@ -686,6 +694,42 @@
             </div>
         </div>
 
+        <!-- Find modal -->
+        <div id="find-form" class="w3-modal">
+            <div
+                class="w3-modal-content w3-card-8 w3-animate-zoom"
+                style="max-width: 600px"
+            >
+                <!-- Modal Header -->
+                <div class="w3-container w3-teal">
+                    <h2>Find Text</h2>
+                    <span
+                        class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                        onclick="closeFindModal();"
+                        >&times;</span
+                    >
+                </div>
+
+                <!-- Modal Content -->
+                <div class="w3-container">
+                    <!-- Prevent default form submission -->
+                    <input type="hidden" name="noteId" id="findNoteId" />
+                    <input
+                        type="text"
+                        id="searchInput"
+                        name="searchInput"
+                        class="w3-input"
+                        placeholder="Enter text to find"
+                    />
+                    <button class="w3-btn w3-blue" onclick="findText();">
+                        Find
+                    </button>
+
+                    <p id="searchResults">Results will appear here.</p>
+                </div>
+            </div>
+        </div>
+
         <script>
             function updateTask(e) {
                 var editForm = document.getElementById("edit-form");
@@ -971,6 +1015,58 @@
                 // Close the Apply Privilege Changes modal
                 document.getElementById("applyPrivilegeModal").style.display =
                     "none";
+            }
+
+            function openFindModal(button) {
+                var noteId = button.getAttribute("find-noteID");
+                document.getElementById("findNoteId").value = noteId;
+                document.getElementById("find-form").style.display = "block";
+            }
+
+            function closeFindModal() {
+                document.getElementById("find-form").style.display = "none";
+            }
+            function findText() {
+                // Implement your logic to find text here
+                var searchText = document.getElementById("searchInput").value;
+                var noteId = document.getElementById("findNoteId").value;
+                // Example logic: You can search for the text in your notes' content and update the "searchResults" with the search results.
+                findTextInNotes(searchText, noteId);
+            }
+
+            function findTextInNotes(searchText, noteId) {
+                // Use AJAX to find text in a note with a GET request
+                $.ajax({
+                    url: "/find/" + noteId,
+                    method: "GET",
+                    data: { searchInput: searchText },
+                    dataType: "json",
+                    success: function (data) {
+                        console.log("Received search results:", data);
+
+                        // Handle the search results here, e.g., update the UI with the results
+                        if (data && data.length > 0) {
+                            var totalCount = 0; // Initialize the total count variable
+                            for (var i = 0; i < data.length; i++) {
+                                var result = data[i];
+                                var count = result.Count; // Parse the count as an integer
+                                totalCount += count; // Update the total count
+                            }
+
+                            // Update the HTML element with the total count
+                            var searchResults =
+                                "Total occurrences in the note: " + totalCount;
+                            document.getElementById(
+                                "searchResults"
+                            ).textContent = searchResults;
+                        } else {
+                            console.error("No matching results found");
+                        }
+                    },
+                    error: function (error) {
+                        console.error("Failed to perform the search: " + error);
+                    },
+                });
             }
         </script>
     </body>

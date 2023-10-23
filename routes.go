@@ -27,6 +27,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/remove-shared-note", a.removeSharedNoteHandler).Methods("POST")
 	a.Router.HandleFunc("/getSharedUsersForNote/{noteID:[0-9]+}", a.getSharedUsersForNoteHandler).Methods("GET")
 	a.Router.HandleFunc("/getUnsharedUsersForNote/{noteID:[0-9]+}", a.getUnsharedUsersForNoteHandler).Methods("GET")
+	a.Router.HandleFunc("/find/{noteID:[0-9]+}", a.findInNoteHandler).Methods("GET")
 	a.Router.HandleFunc("/update-privileges", a.updatePrivilegesHandler).Methods("POST")
 
 	log.Println("Routes established")
