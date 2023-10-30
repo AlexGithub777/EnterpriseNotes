@@ -256,6 +256,20 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
     return notes, nil
 }
 
+// RemoveDelegation removes delegation for a note with the given noteID.
+func (a *App) RemoveDelegation(noteID int) error {
+    // Use a SQL statement to set the noteDelegation to NULL for the specified noteID
+    query := "UPDATE notes SET noteDelegation = NULL WHERE id = $1"
+    _, err := a.db.Exec(query, noteID)
+
+    if err != nil {
+        return fmt.Errorf("Failed to remove delegation: %v", err)
+    }
+
+    return nil
+}
+
+
 
 func (a *App) getUnsharedUsersForNote(noteID int, username string) ([]User, error) {
     // Initialize a slice to store unshared users

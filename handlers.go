@@ -361,6 +361,26 @@ func (a *App) removeSharedNoteHandler(w http.ResponseWriter, r *http.Request) {
     // Redirect the user to a success page or back to the list of shared notes
     http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
+func (a *App) removeDelegationHandler(w http.ResponseWriter, r *http.Request) {
+    // Parse the request and get the note ID
+    var inputData struct {
+        NoteID int // You may need to adjust the data structure as per your needs
+    }
+    decoder := json.NewDecoder(r.Body)
+    if err := decoder.Decode(&inputData); err != nil {
+        respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+        return
+    }
+
+    // Call the database function to remove delegation
+    if err := a.RemoveDelegation(inputData.NoteID); // Replace with your actual DB function
+    err != nil {
+        respondWithError(w, http.StatusInternalServerError, err.Error())
+        return
+    }
+
+    respondWithJSON(w, http.StatusOK, map[string]string{"message": "Delegation removed successfully"})
+}
 
 
 func (a *App) updatePrivilegesHandler(w http.ResponseWriter, r *http.Request) {

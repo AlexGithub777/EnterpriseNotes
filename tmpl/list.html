@@ -58,7 +58,6 @@
           />
           <button class="w3-btn w3-teal" type="submit">Search</button>
         </form>
-
         <h3>My notes</h3>
         <table class="w3-table w3-centered w3-border w3-bordered w3-hoverable">
           <thead>
@@ -89,27 +88,19 @@
               <td>{{$note.NoteCreated}}</td>
               <td>
                 {{if $note.TaskCompletionTime.Valid}}
-                {{$note.TaskCompletionTime.String}} {{else}} N/A
-                <!-- or any other placeholder value you prefer -->
-                {{end}}
+                {{$note.TaskCompletionTime.String}} {{else}} N/A {{end}}
               </td>
               <td>
                 {{if $note.TaskCompletionDate.Valid}}
-                {{$note.TaskCompletionDate.String}} {{else}} N/A
-                <!-- or any other placeholder value you prefer -->
-                {{end}}
+                {{$note.TaskCompletionDate.String}} {{else}} N/A {{end}}
               </td>
               <td>
                 {{if $note.NoteStatus.Valid}} {{$note.NoteStatus.String}}
-                {{else}} N/A
-                <!-- or any other placeholder value you prefer -->
-                {{end}}
+                {{else}} N/A {{end}}
               </td>
               <td>
                 {{if $note.NoteDelegation.Valid}}
-                {{$note.NoteDelegation.String}} {{else}} N/A
-                <!-- or any other placeholder value you prefer -->
-                {{end}}
+                {{$note.NoteDelegation.String}} {{else}} N/A {{end}}
               </td>
               <td>
                 <!-- Display the list of shared users for this note -->
@@ -124,7 +115,7 @@
                 >
                   Find
                 </button>
-
+                {{if eq $note.Owner $.Username}}
                 <button
                   class="w3-btn w3-teal"
                   onclick="updateTask(this);"
@@ -140,19 +131,28 @@
                   Modify
                 </button>
                 <button
-                  class="w3-btn w3-red"
-                  onclick="deleteTask(this)"
-                  data-taskid="{{$note.ID}}"
-                >
-                  Delete
-                </button>
-                <button
                   class="w3-btn w3-blue"
-                  onclick="openOptions(this)"
+                  onclick="openOptions(this);"
                   data-noteid="{{$note.ID}}"
                 >
                   Options
                 </button>
+                <button
+                  class="w3-btn w3-red"
+                  onclick="deleteTask(this);"
+                  data-taskid="{{$note.ID}}"
+                >
+                  Delete
+                </button>
+                {{end}} {{if not (eq $note.Owner $.Username)}}
+                <button
+                  class="w3-btn w3-red"
+                  onclick="removeDelegation(this);"
+                  data-noteid="{{$note.ID}}"
+                >
+                  Remove Delegation
+                </button>
+                {{end}}
               </td>
             </tr>
             {{end}}
@@ -935,6 +935,43 @@
 
         // Example logic: You can search for the text in your notes' content and update the "searchResults" with the search results.
         findTextInNotes(searchText, noteId);
+      }
+
+      function removeDelegation(button) {
+        // Assuming that 'button' is the button element that was clicked
+        var noteID = button.getAttribute("data-taskid");
+
+        // You can use an AJAX request to send a request to your server to remove the delegation
+        // Example:
+        // Replace the URL and method with your server endpoint and HTTP method
+        var url = "/remove-delegation";
+        var method = "POST";
+
+        // Create a new XMLHttpRequest object
+        var xhr = new XMLHttpRequest();
+
+        // Configure the request
+        xhr.open(method, url, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        // Define a callback function to handle the response from the server
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+              // The delegation was successfully removed
+              alert("Delegation removed successfully.");
+              // You can also update the UI as needed, e.g., remove the row from the table
+              var row = button.closest("tr");
+              row.parentNode.removeChild(row);
+            } else {
+              // Handle errors or display an error message
+              alert("Error: Unable to remove delegation.");
+            }
+          }
+        };
+
+        // Send the request with the noteID in the request payload
+        xhr.send(JSON.stringify({ noteID: noteID }));
       }
 
       function findTextInNotes(searchText, noteId) {
