@@ -63,6 +63,8 @@
         <table class="w3-table w3-centered w3-border w3-bordered w3-hoverable">
           <thead>
             <tr>
+              <th>Owner</th>
+              <!-- New header for owner -->
               <th>Title</th>
               <th>Type</th>
               <th>Description</th>
@@ -79,6 +81,8 @@
           <tbody>
             {{range $index, $note := .Notes}}
             <tr>
+              <td>{{$note.Owner}}</td>
+              <!-- Display the owner -->
               <td>{{$note.Title}}</td>
               <td>{{$note.NoteType}}</td>
               <td>{{$note.Description}}</td>
@@ -167,6 +171,8 @@
               <th>Completion Date</th>
               <th>Status</th>
               <th>Delegation</th>
+              <th>Shared from</th>
+              <!-- New header for shared from -->
               <th>Actions</th>
             </tr>
           </thead>
@@ -201,6 +207,8 @@
                 <!-- or any other placeholder value you prefer -->
                 {{end}}
               </td>
+              <td>{{$note.Owner}}</td>
+              <!-- Display the owner information -->
               <td>
                 {{if eq $note.Privileges "editor"}}
                 <button

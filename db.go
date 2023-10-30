@@ -9,18 +9,19 @@ import (
 func (a *App) retrieveNotes(username string) ([]Note, error) {
 	// Query to fetch notes and shared users' data
 	query := `
-        SELECT
-            n.*, u.username, us.privileges
-        FROM
-            notes n
-        LEFT JOIN
-            user_shares us ON n.id = us.note_id
-        LEFT JOIN
-            users u ON us.username = u.username
-        WHERE
-            n.owner = $1
-        ORDER BY
-            n.id
+    SELECT
+    n.*, u.username, us.privileges
+    FROM
+        notes n
+    LEFT JOIN
+        user_shares us ON n.id = us.note_id
+    LEFT JOIN
+        users u ON us.username = u.username
+    WHERE
+        n.owner = $1 OR n.noteDelegation = $1
+    ORDER BY
+    n.id
+
     `
 
 	rows, err := a.db.Query(query, username)
