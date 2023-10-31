@@ -98,14 +98,26 @@
                             <td>{{$note.NoteCreated}}</td>
                             <td>
                                 {{if $note.TaskCompletionTime.Valid}}
-                                {{$note.TaskCompletionTime.String}} {{else}} N/A
+                                    {{if ne $note.TaskCompletionTime.String ""}}
+                                        {{formatTime "15:04" $note.TaskCompletionTime.String}}
+                                    {{else}}
+                                        N/A
+                                    {{end}}
+                                {{else}}
+                                    N/A
                                 {{end}}
-                            </td>
+                            </td>                            
                             <td>
                                 {{if $note.TaskCompletionDate.Valid}}
-                                {{$note.TaskCompletionDate.String}} {{else}} N/A
+                                    {{if ne $note.TaskCompletionDate.String ""}}
+                                        {{formatDate "2006-01-02" $note.TaskCompletionDate.String}}
+                                    {{else}}
+                                        N/A
+                                    {{end}}
+                                {{else}}
+                                    N/A
                                 {{end}}
-                            </td>
+                            </td>                                                                                
                             <td>
                                 {{if $note.NoteStatus.Valid}}
                                 {{$note.NoteStatus.String}} {{else}} N/A {{end}}
@@ -219,16 +231,26 @@
                             <td>{{$note.NoteCreated}}</td>
                             <td>
                                 {{if $note.TaskCompletionTime.Valid}}
-                                {{$note.TaskCompletionTime.String}} {{else}} N/A
-                                <!-- or any other placeholder value you prefer -->
+                                    {{if ne $note.TaskCompletionTime.String ""}}
+                                        {{formatTime "15:04" $note.TaskCompletionTime.String}}
+                                    {{else}}
+                                        N/A
+                                    {{end}}
+                                {{else}}
+                                    N/A
                                 {{end}}
-                            </td>
+                            </td>                            
                             <td>
                                 {{if $note.TaskCompletionDate.Valid}}
-                                {{$note.TaskCompletionDate.String}} {{else}} N/A
-                                <!-- or any other placeholder value you prefer -->
+                                    {{if ne $note.TaskCompletionDate.String ""}}
+                                        {{formatDate "2006-01-02" $note.TaskCompletionDate.String}}
+                                    {{else}}
+                                        N/A
+                                    {{end}}
+                                {{else}}
+                                    N/A
                                 {{end}}
-                            </td>
+                            </td>   
                             <td>
                                 {{if $note.NoteStatus.Valid}}
                                 {{$note.NoteStatus.String}} {{else}} N/A
@@ -557,57 +579,30 @@
                         />
 
                         <div class="w3-row-padding">
-                            <div class="w3-half">
-                                <label class="w3-label">Title</label>
-                                <input
-                                    class="w3-input"
-                                    type="text"
-                                    id="DelegatedTitle"
-                                    name="Title"
-                                    required
-                                />
-                            </div>
-                            <div class="w3-half">
-                                <label class="w3-label">Note/Task</label>
-                                <select
-                                    class="w3-select"
-                                    id="DelegatedNoteType"
-                                    onchange="DelegatedHandleNoteTypeChange();"
-                                    name="NoteType"
-                                    required
-                                >
-                                    <option value="Note">Note</option>
-                                    <option value="Task">Task</option>
-                                </select>
-                            </div>
+                            <label class="w3-label">Title</label>
+                            <input
+                                class="w3-input"
+                                type="text"
+                                id="DelegatedTitle"
+                                name="Title"
+                                required
+                            />
                         </div>
-
-                        <div class="w3-row-padding">
-                            <div
-                                class="w3-half"
-                                id="DelegatedTaskCompletionTimeDiv"
-                            >
-                                <label class="w3-label">Completion Time</label>
-                                <input
-                                    class="w3-input"
-                                    type="time"
-                                    id="DelegatedTaskCompletionTime"
-                                    name="TaskCompletionTime"
-                                />
-                            </div>
-                            <div
-                                class="w3-half"
-                                id="DelegatedTaskCompletionDateDiv"
-                            >
-                                <label class="w3-label">Completion Date</label>
-                                <input
-                                    class="w3-input"
-                                    type="date"
-                                    id="DelegatedTaskCompletionDate"
-                                    name="TaskCompletionDate"
-                                />
-                            </div>
-                        </div>
+                        <input
+                            id="DelegatedNoteType"
+                            name="NoteType"
+                            style="display: none"
+                        />
+                        <input
+                            id="DelegatedTaskCompletionTime"
+                            name="TaskCompletionTime"
+                            style="display: none"
+                        />
+                        <input
+                            id="DelegatedTaskCompletionDate"
+                            name="TaskCompletionDate"
+                            style="display: none"
+                        />
 
                         <label class="w3-label">Description</label>
                         <textarea
@@ -617,18 +612,12 @@
                             required
                         ></textarea>
 
-                        <label class="w3-label">Status</label>
-                        <select
-                            class="w3-input"
+                        <!--Hide note status in edit-delegated as status should always be delegated, and only owner should be able to set-->
+                        <input
                             id="DelegatedNoteStatus"
                             name="NoteStatus"
-                        >
-                            <option value="None">None</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Cancelled">Cancelled</option>
-                            <option value="Delegated">Delegated</option>
-                        </select>
+                            style="display: none"
+                        />
 
                         <div class="w3-row-padding">
                             <div class="w3-half">
@@ -931,33 +920,10 @@
                 document.getElementById("DelegatedNoteStatus").value = status;
                 document.getElementById("updateDelegatedNote").value =
                     delegation;
-
-                var completionDate = e.getAttribute("data-completiondate");
-                var dateParts = completionDate.split("-");
-                var formattedDate =
-                    dateParts[2] + "-" + dateParts[1] + "-" + dateParts[0];
-
                 document.getElementById("DelegatedTaskCompletionDate").value =
-                    formattedDate;
-
-                var completionTime = e.getAttribute("data-completiontime");
-                var timeParts = completionTime.split(" ");
-                var time = timeParts[0];
-                var meridian = timeParts[1];
-                var hour = parseInt(time.split(":")[0]);
-                var minute = parseInt(time.split(":")[1]);
-
-                if (meridian === "PM" && hour < 12) {
-                    hour += 12;
-                }
-
-                var formattedTime =
-                    hour.toString().padStart(2, "0") +
-                    ":" +
-                    minute.toString().padStart(2, "0");
-
+                    completionDate;
                 document.getElementById("DelegatedTaskCompletionTime").value =
-                    formattedTime;
+                    completionTime;
 
                 DelegatedHandleNoteTypeChange();
 
@@ -988,33 +954,10 @@
                 document.getElementById("editNoteStatus").value = status;
                 document.getElementById("editNoteDelegation").value =
                     delegation;
-
-                var completionDate = e.getAttribute("data-completiondate");
-                var dateParts = completionDate.split("-");
-                var formattedDate =
-                    dateParts[2] + "-" + dateParts[1] + "-" + dateParts[0];
-
                 document.getElementById("editTaskCompletionDate").value =
-                    formattedDate;
-
-                var completionTime = e.getAttribute("data-completiontime");
-                var timeParts = completionTime.split(" ");
-                var time = timeParts[0];
-                var meridian = timeParts[1];
-                var hour = parseInt(time.split(":")[0]);
-                var minute = parseInt(time.split(":")[1]);
-
-                if (meridian === "PM" && hour < 12) {
-                    hour += 12;
-                }
-
-                var formattedTime =
-                    hour.toString().padStart(2, "0") +
-                    ":" +
-                    minute.toString().padStart(2, "0");
-
+                    completionDate;
                 document.getElementById("editTaskCompletionTime").value =
-                    formattedTime;
+                    completionTime;
                 // Get task ID to update
 
                 var taskId = e.getAttribute("data-noteid");

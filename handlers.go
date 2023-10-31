@@ -8,12 +8,17 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/icza/session"
 )
 
 func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
+	
+	
+	
+
     if os.Getenv("DISABLE_AUTH") != "1" {
         // Perform authentication checks only if the environment variable is not set
         a.isAuthenticated(w, r)
@@ -76,11 +81,27 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         SharedNotes:   sharedNotes,
     }
 
-    t, err := template.New("list.html").ParseFiles("tmpl/list.html")
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+    t, err := template.New("list.html").Funcs(template.FuncMap{
+		"formatTime": func(layout, value string) (string, error) {
+			t, err := time.Parse(layout, value)
+			if err != nil {
+				return "", err
+			}
+			return t.Format("3:04 PM"), nil
+		},
+		"formatDate": func(layout, value string) (string, error) {
+			t, err := time.Parse(layout, value)
+			if err != nil {
+				return "", err
+			}
+			return t.Format("02/01/2006"), nil
+		},
+	}).ParseFiles("tmpl/list.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
         return
-    }
+	}
+	
 
     var buf bytes.Buffer
     err = t.Execute(&buf, data)
