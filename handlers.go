@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"net/http"
 	"os"
@@ -481,50 +480,6 @@ func (a *App) findInNoteHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 }
-
-func (a *App) getNoteDataHandler(w http.ResponseWriter, r *http.Request) {
-    // Get the noteId from the URL parameters
-    vars := mux.Vars(r)
-    noteIdStr, ok := vars["noteId"]
-    if !ok {
-      http.Error(w, "Missing noteId in URL", http.StatusBadRequest)
-      return
-    }
-  
-    // Convert the noteId from string to int
-    noteId, err := strconv.Atoi(noteIdStr)
-    if err != nil {
-      http.Error(w, "Invalid noteId", http.StatusBadRequest)
-      return
-    }
-  
-    // Fetch the note data
-    note, err := a.getNoteByID(noteId)
-    if err != nil {
-      http.Error(w, "Failed to get note: "+err.Error(), http.StatusInternalServerError)
-      return
-    }
-  
-    // Log the note data
-    fmt.Printf("Note data: %+v\n", note)
-  
-    // Convert the note data to JSON
-    noteJson, err := json.Marshal(note)
-    if err != nil {
-      http.Error(w, "Failed to encode JSON response", http.StatusInternalServerError)
-      return
-    }
-  
-    // Set the content type to application/json
-    w.Header().Set("Content-Type", "application/json")
-  
-    // Write the note data as a JSON response
-    w.Write(noteJson)
-  }
-  
-  
-
-
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	a.isAuthenticated(w, r)
