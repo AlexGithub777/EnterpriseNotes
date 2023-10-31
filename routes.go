@@ -30,6 +30,8 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/find/{noteID:[0-9]+}", a.findInNoteHandler).Methods("GET")
 	a.Router.HandleFunc("/update-privileges", a.updatePrivilegesHandler).Methods("POST")
 	a.Router.HandleFunc("/remove-delegation", a.removeDelegationHandler).Methods("POST")
+	a.Router.HandleFunc("/getNoteData/{noteId:[0-9]+}", a.getNoteDataHandler).Methods("GET")
+
 
 
 	log.Println("Routes established")

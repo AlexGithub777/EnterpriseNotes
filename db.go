@@ -421,15 +421,10 @@ func countOccurrences(text, searchPattern string) int {
 }
 
 
-
-
 func (a *App) getNoteByID(noteID int) (*Note, error) {
-    // You need to implement the logic to retrieve the note from your database.
-    // Here's a simplified example assuming you have a database connection and a "notes" table.
-    
     // Query the database to retrieve the note.
     var note Note
-    err := a.db.QueryRow("SELECT id, title, description FROM notes WHERE id = $1", noteID).Scan(&note.ID, &note.Title, &note.Description)
+    err := a.db.QueryRow("SELECT id, title, description, noteType, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner FROM notes WHERE id = $1", noteID).Scan(&note.ID, &note.Title, &note.Description, &note.NoteType, &note.TaskCompletionTime, &note.TaskCompletionDate, &note.NoteStatus, &note.NoteDelegation, &note.Owner)
     if err != nil {
         return nil, err
     }
@@ -437,3 +432,4 @@ func (a *App) getNoteByID(noteID int) (*Note, error) {
     // Return the retrieved note.
     return &note, nil
 }
+

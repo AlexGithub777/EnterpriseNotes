@@ -116,6 +116,7 @@
                   Find
                 </button>
                 {{if eq $note.Owner $.Username}}
+                <!-- If the note is owned by the current user, show the normal "Modify" button -->
                 <button
                   class="w3-btn w3-teal"
                   onclick="updateTask(this);"
@@ -130,6 +131,23 @@
                 >
                   Modify
                 </button>
+                {{else if eq $note.NoteDelegation.String $.Username}}
+                <!-- If the note is delegated to the current user, show the "Modify Delegated" button -->
+                <button
+                  class="w3-btn w3-teal"
+                  onclick="updateDelegatedTask(this);"
+                  data-noteid="{{$note.ID}}"
+                  data-title="{{$note.Title}}"
+                  data-description="{{$note.Description}}"
+                  data-notetype="{{$note.NoteType}}"
+                  data-completiontime="{{$note.TaskCompletionTime.String}}"
+                  data-completiondate="{{$note.TaskCompletionDate.String}}"
+                  data-notestatus="{{$note.NoteStatus.String}}"
+                  data-delegation="{{$note.NoteDelegation.String}}"
+                >
+                  Modify Delegated
+                </button>
+                {{end}} {{if eq $note.Owner $.Username}}
                 <button
                   class="w3-btn w3-blue"
                   onclick="openOptions(this);"
@@ -295,7 +313,7 @@
               <option value="Delegated">Delegated</option>
             </select>
             <label class="w3-label">Delegation</label>
-            <select class="w3-input" type="text" name="NoteDelegation">
+            <select class="w3-input" type="text" name="NoteDelegation" disabled>
               <option value="" selected></option>
               <!-- Generate options from user data -->
               {{range $user := .AllUsers}}
@@ -338,9 +356,10 @@
             <h2>Edit Task</h2>
             <span
               class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-              onclick="document.getElementById('edit-form').style.display='none'"
-              >&times;</span
+              onclick="document.getElementById('edit-form').style.display='none';"
             >
+              &times;
+            </span>
           </div>
 
           <form class="w3-container" action="/update" method="post">
@@ -413,6 +432,7 @@
             </select>
 
             <label class="w3-label">Delegation</label>
+
             <select class="w3-input" id="NoteDelegation" name="NoteDelegation">
               <!-- Generate options from user data -->
               {{range $user := .AllUsers}}
@@ -434,6 +454,117 @@
                   class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
                   type="button"
                   onclick="document.getElementById('edit-form').style.display='none'"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Delegated Form Modal -->
+    <div class="w3-container">
+      <div id="edit-delegated-form" class="w3-modal">
+        <div
+          class="w3-modal-content w3-card-8 w3-animate-zoom"
+          style="max-width: 600px"
+        >
+          <div class="w3-container w3-teal">
+            <h2>Edit Delegated Task</h2>
+            <span
+              class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+              onclick="document.getElementById('edit-delegated-form').style.display='none';"
+              >&times;</span
+            >
+          </div>
+          <form class="w3-container" action="/update" method="post">
+            <input type="hidden" name="Id" id="delegatedTaskIdToUpdate" />
+            <input
+              type="hidden"
+              name="NoteDelegation"
+              id="updateDelegatedNote"
+            />
+
+            <div class="w3-row-padding">
+              <div class="w3-half">
+                <label class="w3-label">Title</label>
+                <input
+                  class="w3-input"
+                  type="text"
+                  id="DelegatedTitle"
+                  name="Title"
+                  required
+                />
+              </div>
+              <div class="w3-half">
+                <label class="w3-label">Note/Task</label>
+                <select
+                  class="w3-select"
+                  id="DelegatedNoteType"
+                  name="NoteType"
+                  required
+                >
+                  <option value="Note">Note</option>
+                  <option value="Task">Task</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="w3-row-padding">
+              <div class="w3-half">
+                <label class="w3-label">Completion Time</label>
+                <input
+                  class="w3-input"
+                  type="time"
+                  id="DelegatedTaskCompletionTime"
+                  name="TaskCompletionTime"
+                />
+              </div>
+              <div class="w3-half">
+                <label class="w3-label">Completion Date</label>
+                <input
+                  class="w3-input"
+                  type="date"
+                  id="DelegatedTaskCompletionDate"
+                  name="TaskCompletionDate"
+                />
+              </div>
+            </div>
+
+            <label class="w3-label">Description</label>
+            <input
+              class="w3-input"
+              type="text"
+              id="DelegatedDescription"
+              name="Description"
+              required
+            />
+
+            <label class="w3-label">Status</label>
+            <select class="w3-input" id="DelegatedNoteStatus" name="NoteStatus">
+              <option value="None">None</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="Delegated">Delegated</option>
+            </select>
+
+            <div class="w3-row-padding">
+              <div class="w3-half">
+                <button
+                  class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                  type="submit"
+                >
+                  Save
+                </button>
+              </div>
+              <div class="w3-half">
+                <button
+                  class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
+                  type="button"
+                  onclick="document.getElementById('edit-delegated-form').style.display='none'"
                 >
                   Cancel
                 </button>
@@ -661,11 +792,13 @@
     </div>
 
     <script>
-      function updateTask(e) {
-        var editForm = document.getElementById("edit-form");
-        // Display update form
-        editForm.style.display = "block";
+      function updateDelegatedTask(e) {
+        var editDelegatedForm = document.getElementById("edit-delegated-form");
+        // Display the "Edit Delegated Modal"
+        editDelegatedForm.style.display = "block";
 
+        // Get the data attributes from the button element
+        var id = e.getAttribute("data-noteid");
         var title = e.getAttribute("data-title");
         var description = e.getAttribute("data-description");
         var type = e.getAttribute("data-notetype");
@@ -673,6 +806,48 @@
         var completionDate = e.getAttribute("data-completiondate");
         var status = e.getAttribute("data-notestatus");
         var delegation = e.getAttribute("data-delegation");
+
+        console.log("Completion Time:", completionTime);
+        console.log("Completion Date:", completionDate);
+
+        // Populate the "Edit Delegated Modal" fields with the data
+        document.getElementById("delegatedTaskIdToUpdate").value = id;
+        document.getElementById("DelegatedTitle").value = title;
+        // Set other fields as needed (type, completionTime, completionDate, status, delegation)
+        document.getElementById("DelegatedNoteType").value = type;
+        // Convert completionTime from "02:00 PM" to "14:00"
+
+        document.getElementById("DelegatedDescription").value = description;
+        document.getElementById("DelegatedNoteStatus").value = status;
+        document.getElementById("updateDelegatedNote").value = delegation;
+
+        document.getElementById("DelegatedTaskCompletionTime").value =
+          completionTime;
+
+        // Convert completionDate from "23-10-2024" to "2024-10-23"
+
+        document.getElementById("DelegatedTaskCompletionDate").value =
+          completionDate;
+
+        // You may also need to fetch additional data if required, like shared users
+        // fetchAdditionalData(id);
+      }
+
+      function updateTask(e) {
+        var editForm = document.getElementById("edit-form");
+        // Display update form
+        editForm.style.display = "block";
+
+        var id = e.getAttribute("data-noteid");
+        var title = e.getAttribute("data-title");
+        var description = e.getAttribute("data-description");
+        var type = e.getAttribute("data-notetype");
+        var completionTime = e.getAttribute("data-completiontime");
+        var completionDate = e.getAttribute("data-completiondate");
+        var status = e.getAttribute("data-notestatus");
+        var delegation = e.getAttribute("data-delegation");
+
+        //fetchNoteData(id);
 
         // Populate the edit form fields with the note data
         document.getElementById("Title").value = title;
@@ -937,6 +1112,74 @@
         findTextInNotes(searchText, noteId);
       }
 
+      document
+        .getElementById("NoteStatus")
+        .addEventListener("change", function () {
+          var status = this.value;
+          var delegationDropdown = document.getElementById("NoteDelegation");
+
+          if (status === "Delegated") {
+            delegationDropdown.disabled = false;
+          } else {
+            delegationDropdown.disabled = true;
+          }
+        });
+
+      function fetchNoteData(noteId, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/getNoteData/" + noteId, true);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState == 4 && xhr.status == 200) {
+            var noteData = JSON.parse(xhr.responseText);
+            console.log(noteData); // Log the note data
+            // Populate the form fields with the note data
+            document.getElementById("Title").value = noteData.title;
+            document.getElementById("NoteType").value = noteData.note_type;
+            document.getElementById("TaskCompletionTime").value = noteData
+              .task_completion_time.Valid
+              ? convertTime12to24(noteData.task_completion_time.String)
+              : "";
+
+            document.getElementById("TaskCompletionDate").value = noteData
+              .task_completion_date.Valid
+              ? convertDate(noteData.task_completion_date.String)
+              : "";
+
+            // Add this line to check the value of noteData.description
+            console.log("Description from noteData: " + noteData.description);
+
+            // Add this line to check if the correct element is selected
+            console.log(
+              "Description input element: " +
+                document.getElementById("Description")
+            );
+
+            // Populate the Description field
+            document.getElementById("Description").value = noteData.description;
+
+            // Add this line to check if the Description field is populated
+            console.log(
+              "Description field value: " +
+                document.getElementById("Description").value
+            );
+
+            document.getElementById("NoteStatus").value = noteData.note_status
+              .Valid
+              ? noteData.note_status.String
+              : "";
+            document.getElementById("NoteDelegation").value = noteData
+              .note_delegation.Valid
+              ? noteData.note_delegation.String
+              : "";
+            // Call the callback function
+            if (typeof callback === "function") {
+              callback();
+            }
+          }
+        };
+        xhr.send();
+      }
+
       function removeDelegation(button) {
         // Assuming that 'button' is the button element that was clicked
         var noteID = button.getAttribute("data-taskid");
@@ -1007,6 +1250,33 @@
             console.error("Failed to perform the search: " + error);
           },
         });
+
+        function convertTime12to24(time12) {
+          // Split the time into hours, minutes, and AM/PM
+          const [time, period] = time12.split(" ");
+          const [hours, minutes] = time.split(":");
+
+          let hours24 = parseInt(hours);
+          if (period === "PM" && hours24 !== 12) {
+            hours24 += 12;
+          } else if (period === "AM" && hours24 === 12) {
+            hours24 = 0;
+          }
+
+          // Ensure two-digit formatting for hours and minutes
+          const formattedHours = String(hours24).padStart(2, "0");
+          const formattedMinutes = minutes.padStart(2, "0");
+
+          return `${formattedHours}:${formattedMinutes}`;
+        }
+
+        function convertDate(date) {
+          // Split the date into day, month, and year
+          const [day, month, year] = date.split("-");
+
+          // Format the date as "YYYY-MM-DD"
+          return `${year}-${month}-${day}`;
+        }
       }
     </script>
   </body>
