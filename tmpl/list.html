@@ -1,1283 +1,1469 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/statics/ionicons/css/w3.css" />
-    <link rel="stylesheet" href="/statics/ionicons/css/ionicons.min.css" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!--Importing jquery-->
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="/statics/ionicons/css/w3.css" />
+        <link rel="stylesheet" href="/statics/ionicons/css/ionicons.min.css" />
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!--Importing jquery-->
 
-    <title>Enterprise Notes</title>
-    <style>
-      .hoverbtn:hover {
-        font-weight: bold;
-        opacity: 0.4;
-      }
+        <title>Enterprise Notes</title>
+        <style>
+            .hoverbtn:hover {
+                font-weight: bold;
+                opacity: 0.4;
+            }
 
-      a {
-        text-decoration: none;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="w3-row-padding">
-      <div class="w3-card-2 w3-margin-top">
-        <header class="w3-container w3-center w3-teal">
-          <div class="w3-row">
-            <div class="w3-half">
-              <h3 class="w3-right">Enterprise Notes</h3>
+            a {
+                text-decoration: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="w3-row-padding">
+            <div class="w3-card-2 w3-margin-top">
+                <header class="w3-container w3-center w3-teal">
+                    <div class="w3-row">
+                        <div class="w3-half">
+                            <h3 class="w3-right">Enterprise Notes</h3>
+                        </div>
+                        <div class="w3-half w3-text-right">
+                            <div class="w3-right">
+                                <h3 class="w3-left w3-margin-right">
+                                    Logged in as {{.Username}}
+                                </h3>
+                                <input
+                                    type="hidden"
+                                    id="username"
+                                    value="{{.Username}}"
+                                />
+                                <a
+                                    href="#"
+                                    onclick="document.getElementById('create-form').style.display='block'; updateDelegationDropdownCreate(); handleNoteTypeChange();"
+                                >
+                                    <i
+                                        class="ion ion-ios-plus-outline w3-xxlarge hoverbtn"
+                                    ></i>
+                                </a>
+                                <a href="/user-logout">
+                                    <i
+                                        class="ion ion-log-out w3-xxlarge hoverbtn"
+                                    ></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+                <!-- Add this code before your table -->
+                <h3>Search Notes</h3>
+                <form class="w3-container" action="/search" method="post">
+                    <input
+                        class="w3-input"
+                        type="text"
+                        name="searchQuery"
+                        placeholder="Search notes..."
+                    />
+                    <button class="w3-btn w3-teal" type="submit">Search</button>
+                </form>
+                <h3>My notes</h3>
+                <table
+                    class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
+                >
+                    <thead>
+                        <tr>
+                            <th>Owner</th>
+                            <!-- New header for owner -->
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Created</th>
+                            <th>Completion Time</th>
+                            <th>Completion Date</th>
+                            <th>Status</th>
+                            <th>Delegation</th>
+                            <th>Shared Users</th>
+                            <!-- New header for shared users -->
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range $index, $note := .Notes}}
+                        <tr>
+                            <td>{{$note.Owner}}</td>
+                            <!-- Display the owner -->
+                            <td>{{$note.Title}}</td>
+                            <td>{{$note.NoteType}}</td>
+                            <td>{{$note.Description}}</td>
+                            <td>{{$note.NoteCreated}}</td>
+                            <td>
+                                {{if $note.TaskCompletionTime.Valid}}
+                                {{$note.TaskCompletionTime.String}} {{else}} N/A
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.TaskCompletionDate.Valid}}
+                                {{$note.TaskCompletionDate.String}} {{else}} N/A
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteStatus.Valid}}
+                                {{$note.NoteStatus.String}} {{else}} N/A {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteDelegation.Valid}}
+                                {{$note.NoteDelegation.String}} {{else}} N/A
+                                {{end}}
+                            </td>
+                            <td>
+                                <!-- Display the list of shared users for this note -->
+                                {{range $sharedUser := $note.SharedUsers}}
+                                {{$sharedUser.Username.String}}, {{end}}
+                            </td>
+                            <td>
+                                <button
+                                    class="w3-btn w3-green"
+                                    onclick="openFindModal(this);"
+                                    find-noteID="{{$note.ID}}"
+                                >
+                                    Find
+                                </button>
+                                {{if eq $note.Owner $.Username}}
+                                <!-- If the note is owned by the current user, show the normal "Modify" button -->
+                                <button
+                                    class="w3-btn w3-teal"
+                                    onclick="updateTask(this);"
+                                    data-noteid="{{$note.ID}}"
+                                    data-title="{{$note.Title}}"
+                                    data-description="{{$note.Description}}"
+                                    data-notetype="{{$note.NoteType}}"
+                                    data-completiontime="{{$note.TaskCompletionTime.String}}"
+                                    data-completiondate="{{$note.TaskCompletionDate.String}}"
+                                    data-notestatus="{{$note.NoteStatus.String}}"
+                                    data-delegation="{{$note.NoteDelegation.String}}"
+                                >
+                                    Modify
+                                </button>
+                                {{else if eq $note.NoteDelegation.String
+                                $.Username}}
+                                <!-- If the note is delegated to the current user, show the "Modify Delegated" button -->
+                                <button
+                                    class="w3-btn w3-teal"
+                                    onclick="updateDelegatedTask(this);"
+                                    data-noteid="{{$note.ID}}"
+                                    data-title="{{$note.Title}}"
+                                    data-description="{{$note.Description}}"
+                                    data-notetype="{{$note.NoteType}}"
+                                    data-completiontime="{{$note.TaskCompletionTime.String}}"
+                                    data-completiondate="{{$note.TaskCompletionDate.String}}"
+                                    data-notestatus="{{$note.NoteStatus.String}}"
+                                    data-delegation="{{$note.NoteDelegation.String}}"
+                                >
+                                    Modify
+                                </button>
+                                {{end}} {{if eq $note.Owner $.Username}}
+                                <button
+                                    class="w3-btn w3-blue"
+                                    onclick="openOptions(this);"
+                                    data-noteid="{{$note.ID}}"
+                                >
+                                    Share
+                                </button>
+                                <button
+                                    class="w3-btn w3-red"
+                                    onclick="deleteTask(this);"
+                                    data-taskid="{{$note.ID}}"
+                                >
+                                    Delete
+                                </button>
+                                {{end}} {{if not (eq $note.Owner $.Username)}}
+                                <button
+                                    class="w3-btn w3-red"
+                                    onclick="removeDelegation(this);"
+                                    data-noteid="{{$note.ID}}"
+                                >
+                                    Remove Delegation
+                                </button>
+                                {{end}}
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+
+                <h3>Notes shared with me</h3>
+                <table
+                    class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
+                >
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Created</th>
+                            <th>Completion Time</th>
+                            <th>Completion Date</th>
+                            <th>Status</th>
+                            <th>Delegation</th>
+                            <th>Shared from</th>
+                            <!-- New header for shared from -->
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range $index, $note := .SharedNotes}}
+                        <tr>
+                            <td>{{$note.Title}}</td>
+                            <td>{{$note.NoteType}}</td>
+                            <td>{{$note.Description}}</td>
+                            <td>{{$note.NoteCreated}}</td>
+                            <td>
+                                {{if $note.TaskCompletionTime.Valid}}
+                                {{$note.TaskCompletionTime.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.TaskCompletionDate.Valid}}
+                                {{$note.TaskCompletionDate.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteStatus.Valid}}
+                                {{$note.NoteStatus.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if $note.NoteDelegation.Valid}}
+                                {{$note.NoteDelegation.String}} {{else}} N/A
+                                <!-- or any other placeholder value you prefer -->
+                                {{end}}
+                            </td>
+                            <td>{{$note.Owner}}</td>
+                            <!-- Display the owner information -->
+                            <td>
+                                {{if eq $note.Privileges "editor"}}
+                                <button
+                                    class="w3-btn w3-teal"
+                                    onclick="updateTask(this);"
+                                    data-noteid="{{$note.ID}}"
+                                    data-title="{{$note.Title}}"
+                                    data-description="{{$note.Description}}"
+                                    data-notetype="{{$note.NoteType}}"
+                                    data-completiontime="{{$note.TaskCompletionTime.String}}"
+                                    data-completiondate="{{$note.TaskCompletionDate.String}}"
+                                    data-notestatus="{{$note.NoteStatus.String}}"
+                                    data-delegation="{{$note.NoteDelegation.String}}"
+                                >
+                                    Modify
+                                </button>
+                                {{end}}
+
+                                <button
+                                    class="w3-btn w3-red"
+                                    onclick="openRemoveModal('{{$note.ID}}');"
+                                >
+                                    Remove
+                                </button>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
             </div>
-            <div class="w3-half w3-text-right">
-              <div class="w3-right">
-                <h3 class="w3-left w3-margin-right">
-                  Logged in as {{.Username}}
-                </h3>
-                <input type="hidden" id="username" value="{{.Username}}" />
-                <a
-                  href="#"
-                  onclick="document.getElementById('create-form').style.display='block'"
-                >
-                  <i class="ion ion-ios-plus-outline w3-xxlarge hoverbtn"></i>
-                </a>
-                <a href="/user-logout">
-                  <i class="ion ion-log-out w3-xxlarge hoverbtn"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-        </header>
-        <!-- Add this code before your table -->
-        <h3>Search Notes</h3>
-        <form class="w3-container" action="/search" method="post">
-          <input
-            class="w3-input"
-            type="text"
-            name="searchQuery"
-            placeholder="Search notes..."
-          />
-          <button class="w3-btn w3-teal" type="submit">Search</button>
-        </form>
-        <h3>My notes</h3>
-        <table class="w3-table w3-centered w3-border w3-bordered w3-hoverable">
-          <thead>
-            <tr>
-              <th>Owner</th>
-              <!-- New header for owner -->
-              <th>Title</th>
-              <th>Type</th>
-              <th>Description</th>
-              <th>Created</th>
-              <th>Completion Time</th>
-              <th>Completion Date</th>
-              <th>Status</th>
-              <th>Delegation</th>
-              <th>Shared Users</th>
-              <!-- New header for shared users -->
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{range $index, $note := .Notes}}
-            <tr>
-              <td>{{$note.Owner}}</td>
-              <!-- Display the owner -->
-              <td>{{$note.Title}}</td>
-              <td>{{$note.NoteType}}</td>
-              <td>{{$note.Description}}</td>
-              <td>{{$note.NoteCreated}}</td>
-              <td>
-                {{if $note.TaskCompletionTime.Valid}}
-                {{$note.TaskCompletionTime.String}} {{else}} N/A {{end}}
-              </td>
-              <td>
-                {{if $note.TaskCompletionDate.Valid}}
-                {{$note.TaskCompletionDate.String}} {{else}} N/A {{end}}
-              </td>
-              <td>
-                {{if $note.NoteStatus.Valid}} {{$note.NoteStatus.String}}
-                {{else}} N/A {{end}}
-              </td>
-              <td>
-                {{if $note.NoteDelegation.Valid}}
-                {{$note.NoteDelegation.String}} {{else}} N/A {{end}}
-              </td>
-              <td>
-                <!-- Display the list of shared users for this note -->
-                {{range $sharedUser := $note.SharedUsers}}
-                {{$sharedUser.Username.String}}, {{end}}
-              </td>
-              <td>
-                <button
-                  class="w3-btn w3-green"
-                  onclick="openFindModal(this);"
-                  find-noteID="{{$note.ID}}"
-                >
-                  Find
-                </button>
-                {{if eq $note.Owner $.Username}}
-                <!-- If the note is owned by the current user, show the normal "Modify" button -->
-                <button
-                  class="w3-btn w3-teal"
-                  onclick="updateTask(this);"
-                  data-noteid="{{$note.ID}}"
-                  data-title="{{$note.Title}}"
-                  data-description="{{$note.Description}}"
-                  data-notetype="{{$note.NoteType}}"
-                  data-completiontime="{{$note.TaskCompletionTime.String}}"
-                  data-completiondate="{{$note.TaskCompletionDate.String}}"
-                  data-notestatus="{{$note.NoteStatus.String}}"
-                  data-delegation="{{$note.NoteDelegation.String}}"
-                >
-                  Modify
-                </button>
-                {{else if eq $note.NoteDelegation.String $.Username}}
-                <!-- If the note is delegated to the current user, show the "Modify Delegated" button -->
-                <button
-                  class="w3-btn w3-teal"
-                  onclick="updateDelegatedTask(this);"
-                  data-noteid="{{$note.ID}}"
-                  data-title="{{$note.Title}}"
-                  data-description="{{$note.Description}}"
-                  data-notetype="{{$note.NoteType}}"
-                  data-completiontime="{{$note.TaskCompletionTime.String}}"
-                  data-completiondate="{{$note.TaskCompletionDate.String}}"
-                  data-notestatus="{{$note.NoteStatus.String}}"
-                  data-delegation="{{$note.NoteDelegation.String}}"
-                >
-                  Modify Delegated
-                </button>
-                {{end}} {{if eq $note.Owner $.Username}}
-                <button
-                  class="w3-btn w3-blue"
-                  onclick="openOptions(this);"
-                  data-noteid="{{$note.ID}}"
-                >
-                  Options
-                </button>
-                <button
-                  class="w3-btn w3-red"
-                  onclick="deleteTask(this);"
-                  data-taskid="{{$note.ID}}"
-                >
-                  Delete
-                </button>
-                {{end}} {{if not (eq $note.Owner $.Username)}}
-                <button
-                  class="w3-btn w3-red"
-                  onclick="removeDelegation(this);"
-                  data-noteid="{{$note.ID}}"
-                >
-                  Remove Delegation
-                </button>
-                {{end}}
-              </td>
-            </tr>
-            {{end}}
-          </tbody>
-        </table>
-
-        <h3>Notes shared with me</h3>
-        <table class="w3-table w3-centered w3-border w3-bordered w3-hoverable">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Description</th>
-              <th>Created</th>
-              <th>Completion Time</th>
-              <th>Completion Date</th>
-              <th>Status</th>
-              <th>Delegation</th>
-              <th>Shared from</th>
-              <!-- New header for shared from -->
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{range $index, $note := .SharedNotes}}
-            <tr>
-              <td>{{$note.Title}}</td>
-              <td>{{$note.NoteType}}</td>
-              <td>{{$note.Description}}</td>
-              <td>{{$note.NoteCreated}}</td>
-              <td>
-                {{if $note.TaskCompletionTime.Valid}}
-                {{$note.TaskCompletionTime.String}} {{else}} N/A
-                <!-- or any other placeholder value you prefer -->
-                {{end}}
-              </td>
-              <td>
-                {{if $note.TaskCompletionDate.Valid}}
-                {{$note.TaskCompletionDate.String}} {{else}} N/A
-                <!-- or any other placeholder value you prefer -->
-                {{end}}
-              </td>
-              <td>
-                {{if $note.NoteStatus.Valid}} {{$note.NoteStatus.String}}
-                {{else}} N/A
-                <!-- or any other placeholder value you prefer -->
-                {{end}}
-              </td>
-              <td>
-                {{if $note.NoteDelegation.Valid}}
-                {{$note.NoteDelegation.String}} {{else}} N/A
-                <!-- or any other placeholder value you prefer -->
-                {{end}}
-              </td>
-              <td>{{$note.Owner}}</td>
-              <!-- Display the owner information -->
-              <td>
-                {{if eq $note.Privileges "editor"}}
-                <button
-                  class="w3-btn w3-teal"
-                  onclick="updateTask(this);"
-                  data-noteid="{{$note.ID}}"
-                  data-title="{{$note.Title}}"
-                  data-description="{{$note.Description}}"
-                  data-notetype="{{$note.NoteType}}"
-                  data-completiontime="{{$note.TaskCompletionTime.String}}"
-                  data-completiondate="{{$note.TaskCompletionDate.String}}"
-                  data-notestatus="{{$note.NoteStatus.String}}"
-                  data-delegation="{{$note.NoteDelegation.String}}"
-                >
-                  Modify
-                </button>
-                {{end}}
-
-                <button
-                  class="w3-btn w3-red"
-                  onclick="openRemoveModal('{{$note.ID}}');"
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-            {{end}}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Create Modals -->
-    <div class="w3-container">
-      <div id="create-form" class="w3-modal">
-        <div
-          class="w3-modal-content w3-card-8 w3-animate-zoom"
-          style="max-width: 600px"
-        >
-          <!-- head -->
-          <div class="w3-container w3-teal">
-            <h2>Create a New Task</h2>
-            <span
-              class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-              onclick="document.getElementById('create-form').style.display='none'"
-              >&times;</span
-            >
-          </div>
-
-          <form class="w3-container" action="/create" method="post">
-            <div class="w3-row-padding">
-              <div class="w3-half">
-                <label class="w3-label">Title</label>
-                <input class="w3-input" type="text" name="Title" required />
-              </div>
-              <div class="w3-half">
-                <label class="w3-label">Type</label>
-                <select class="w3-select" name="NoteType" required>
-                  <option value="Note" selected>Note</option>
-                  <option value="Task">Task</option>
-                </select>
-              </div>
-            </div>
-            <div class="w3-row-padding">
-              <div class="w3-half">
-                <label class="w3-label">Completion Time</label>
-                <input class="w3-input" type="time" name="TaskCompletionTime" />
-              </div>
-              <div class="w3-half">
-                <label class="w3-label">Completion Date</label>
-                <input class="w3-input" type="date" name="TaskCompletionDate" />
-              </div>
-            </div>
-
-            <label class="w3-label">Description</label>
-            <input class="w3-input" type="text" name="Description" required />
-
-            <label class="w3-label">Status</label>
-            <select class="w3-select" name="NoteStatus" required>
-              <option value="None" selected>None</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-              <option value="Delegated">Delegated</option>
-            </select>
-            <label class="w3-label">Delegation</label>
-            <select class="w3-input" type="text" name="NoteDelegation" disabled>
-              <option value="" selected></option>
-              <!-- Generate options from user data -->
-              {{range $user := .AllUsers}}
-              <option value="{{$user.Username}}">{{$user.Username}}</option>
-              {{end}}
-            </select>
-            <div class="w3-row-padding">
-              <div class="w3-half">
-                <button
-                  class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
-                  type="submit"
-                >
-                  Create
-                </button>
-              </div>
-              <div class="w3-half">
-                <button
-                  class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
-                  type="button"
-                  onclick="document.getElementById('create-form').style.display='none'"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Edit Modals -->
-    <div class="w3-container">
-      <div id="edit-form" class="w3-modal">
-        <div
-          class="w3-modal-content w3-card-8 w3-animate-zoom"
-          style="max-width: 600px"
-        >
-          <!-- head -->
-          <div class="w3-container w3-teal">
-            <h2>Edit Task</h2>
-            <span
-              class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-              onclick="document.getElementById('edit-form').style.display='none';"
-            >
-              &times;
-            </span>
-          </div>
-
-          <form class="w3-container" action="/update" method="post">
-            <input type="hidden" name="Id" id="taskIdToUpdate" />
-
-            <div class="w3-row-padding">
-              <div class="w3-half">
-                <label class="w3-label">Title</label>
-                <input
-                  class="w3-input"
-                  type="text"
-                  id="Title"
-                  name="Title"
-                  required
-                />
-              </div>
-
-              <div class="w3-half">
-                <label class="w3-label">Note/Task</label>
-                <select
-                  class="w3-select"
-                  id="NoteType"
-                  name="NoteType"
-                  required
-                >
-                  <option value="Note">Note</option>
-                  <option value="Task">Task</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="w3-row-padding">
-              <div class="w3-half">
-                <label class="w3-label">Completion Time</label>
-                <input
-                  class="w3-input"
-                  type="time"
-                  id="TaskCompletionTime"
-                  name="TaskCompletionTime"
-                />
-              </div>
-
-              <div class="w3-half">
-                <label class="w3-label">Completion Date</label>
-                <input
-                  class="w3-input"
-                  type="date"
-                  id="TaskCompletionDate"
-                  name="TaskCompletionDate"
-                />
-              </div>
-            </div>
-
-            <label class="w3-label">Description</label>
-            <input
-              class="w3-input"
-              type="text"
-              id="Description"
-              name="Description"
-              required
-            />
-
-            <label class="w3-label">Status</label>
-            <select class="w3-input" id="NoteStatus" name="NoteStatus">
-              <option value="None">None</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-              <option value="Delegated">Delegated</option>
-            </select>
-
-            <label class="w3-label">Delegation</label>
-
-            <select class="w3-input" id="NoteDelegation" name="NoteDelegation">
-              <!-- Generate options from user data -->
-              {{range $user := .AllUsers}}
-              <option value="{{$user.Username}}">{{$user.Username}}</option>
-              {{end}}
-            </select>
-
-            <div class="w3-row-padding">
-              <div class="w3-half">
-                <button
-                  class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
-                  type="submit"
-                >
-                  Save
-                </button>
-              </div>
-              <div class="w3-half">
-                <button
-                  class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
-                  type="button"
-                  onclick="document.getElementById('edit-form').style.display='none'"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Edit Delegated Form Modal -->
-    <div class="w3-container">
-      <div id="edit-delegated-form" class="w3-modal">
-        <div
-          class="w3-modal-content w3-card-8 w3-animate-zoom"
-          style="max-width: 600px"
-        >
-          <div class="w3-container w3-teal">
-            <h2>Edit Delegated Task</h2>
-            <span
-              class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-              onclick="document.getElementById('edit-delegated-form').style.display='none';"
-              >&times;</span
-            >
-          </div>
-          <form class="w3-container" action="/update" method="post">
-            <input type="hidden" name="Id" id="delegatedTaskIdToUpdate" />
-            <input
-              type="hidden"
-              name="NoteDelegation"
-              id="updateDelegatedNote"
-            />
-
-            <div class="w3-row-padding">
-              <div class="w3-half">
-                <label class="w3-label">Title</label>
-                <input
-                  class="w3-input"
-                  type="text"
-                  id="DelegatedTitle"
-                  name="Title"
-                  required
-                />
-              </div>
-              <div class="w3-half">
-                <label class="w3-label">Note/Task</label>
-                <select
-                  class="w3-select"
-                  id="DelegatedNoteType"
-                  name="NoteType"
-                  required
-                >
-                  <option value="Note">Note</option>
-                  <option value="Task">Task</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="w3-row-padding">
-              <div class="w3-half">
-                <label class="w3-label">Completion Time</label>
-                <input
-                  class="w3-input"
-                  type="time"
-                  id="DelegatedTaskCompletionTime"
-                  name="TaskCompletionTime"
-                />
-              </div>
-              <div class="w3-half">
-                <label class="w3-label">Completion Date</label>
-                <input
-                  class="w3-input"
-                  type="date"
-                  id="DelegatedTaskCompletionDate"
-                  name="TaskCompletionDate"
-                />
-              </div>
-            </div>
-
-            <label class="w3-label">Description</label>
-            <input
-              class="w3-input"
-              type="text"
-              id="DelegatedDescription"
-              name="Description"
-              required
-            />
-
-            <label class="w3-label">Status</label>
-            <select class="w3-input" id="DelegatedNoteStatus" name="NoteStatus">
-              <option value="None">None</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-              <option value="Delegated">Delegated</option>
-            </select>
-
-            <div class="w3-row-padding">
-              <div class="w3-half">
-                <button
-                  class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
-                  type="submit"
-                >
-                  Save
-                </button>
-              </div>
-              <div class="w3-half">
-                <button
-                  class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
-                  type="button"
-                  onclick="document.getElementById('edit-delegated-form').style.display='none'"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Delete Modals -->
-    <div class="w3-container">
-      <div id="delete-form" class="w3-modal">
-        <div
-          class="w3-modal-content w3-card-8 w3-animate-zoom"
-          style="max-width: 600px"
-        >
-          <!-- head -->
-          <div class="w3-container w3-teal">
-            <h2>Are you sure?</h2>
-            <span
-              class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-              onclick="document.getElementById('delete-form').style.display='none'"
-              >&times;</span
-            >
-          </div>
-
-          <form class="w3-container" action="/delete" method="post">
-            <input type="hidden" name="Id" id="taskIdToDelete" />
-            <div class="w3-center">
-              <button
-                class="w3-btn w3-red w3-margin-top w3-margin-bottom"
-                type="submit"
-              >
-                Delete
-              </button>
-              <button
-                type="button"
-                class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
-                onclick="document.getElementById('delete-form').style.display='none'"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Options Modal -->
-    <div id="options-modal" class="w3-modal">
-      <div
-        class="w3-modal-content w3-card-8 w3-animate-zoom"
-        style="max-width: 600px"
-      >
-        <!-- Head -->
-        <div class="w3-container w3-teal">
-          <h2>Options</h2>
-          <span
-            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-            onclick="closeOptionsModal()"
-            >&times;</span
-          >
         </div>
 
-        <!-- Shared Users Table -->
-        <h4>Shared Users</h4>
-
-        <table class="w3-table w3-centered w3-border w3-bordered w3-hoverable">
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Editor</th>
-              <th>Viewer</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="sharedUsersTable">
-            <!-- Shared users will be dynamically added here using JavaScript -->
-          </tbody>
-        </table>
-
-        <h4>Share note</h4>
-        <!-- Share Form -->
-        <form class="w3-container" action="/share" method="post">
-          <input type="hidden" id="taskIdToShare" name="Id" />
-
-          <label class="w3-label">Select User</label>
-          <select
-            class="w3-select"
-            name="SharedUsername"
-            required
-            id="userDropdown"
-          >
-            <!-- Options will be populated using JavaScript -->
-          </select>
-
-          <label class="w3-label">Privileges</label>
-          <div class="w3-container">
-            <input
-              class="w3-radio"
-              type="radio"
-              name="Privileges"
-              value="editor"
-              checked
-            />
-            <label class="w3-validate">Editor</label>
-
-            <input
-              class="w3-radio"
-              type="radio"
-              name="Privileges"
-              value="viewer"
-            />
-            <label class="w3-validate">Viewer</label>
-          </div>
-
-          <button class="w3-btn w3-teal w3-margin-top" type="submit">
-            Share
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!--Remove share modal-->
-    <div class="w3-container">
-      <div id="remove-form" class="w3-modal">
-        <div
-          class="w3-modal-content w3-card-8 w3-animate-zoom"
-          style="max-width: 600px"
-        >
-          <!-- head -->
-          <div class="w3-container w3-teal">
-            <h2>Are you sure?</h2>
-            <span
-              class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-              onclick="document.getElementById('remove-form').style.display='none'"
-              >&times;</span
-            >
-          </div>
-
-          <form class="w3-container" action="/remove-shared-note" method="post">
-            <input type="hidden" name="noteID" id="noteIdToRemove" />
-
-            <input type="hidden" name="username" id="usernameToRemove" />
-            <div class="w3-center">
-              <button
-                class="w3-btn w3-red w3-margin-top w3-margin-bottom"
-                type="submit"
-              >
-                Remove
-              </button>
-              <button
-                type="button"
-                class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
-                onclick="document.getElementById('remove-form').style.display='none'"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Apply Privilege Changes Modal -->
-    <div id="applyPrivilegeModal" class="w3-modal">
-      <div
-        class="w3-modal-content w3-card-8 w3-animate-zoom"
-        style="max-width: 400px"
-      >
-        <div class="w3-container w3-teal">
-          <h2>Apply Privilege Changes</h2>
-          <span
-            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-            onclick="closeApplyPrivilegeModal()"
-            >&times;</span
-          >
-        </div>
-        <!-- Privilege Changes Form -->
-        <form class="w3-container" action="/update-privileges" method="post">
-          <!-- Hidden fields to store noteID and privileges -->
-          <input type="hidden" id="usernametoUpdate" name="username" />
-          <input type="hidden" id="noteIdToUpdate" name="noteID" />
-          <input type="hidden" id="updatedPrivileges" name="privileges" />
-          <button class="w3-btn w3-teal w3-margin-top" type="submit">
-            Apply
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Find modal -->
-    <div id="find-form" class="w3-modal">
-      <div
-        class="w3-modal-content w3-card-8 w3-animate-zoom"
-        style="max-width: 600px"
-      >
-        <!-- Modal Header -->
-        <div class="w3-container w3-teal">
-          <h2>Find Text</h2>
-          <span
-            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
-            onclick="closeFindModal();"
-            >&times;</span
-          >
-        </div>
-
-        <!-- Modal Content -->
+        <!-- Create Modals -->
         <div class="w3-container">
-          <!-- Prevent default form submission -->
-          <input type="hidden" name="noteId" id="findNoteId" />
-          <input
-            type="text"
-            id="searchInput"
-            name="searchInput"
-            class="w3-input"
-            placeholder="Enter text to find"
-          />
-          <button class="w3-btn w3-blue" onclick="findText();">Find</button>
+            <div id="create-form" class="w3-modal">
+                <div
+                    class="w3-modal-content w3-card-8 w3-animate-zoom"
+                    style="max-width: 600px"
+                >
+                    <!-- head -->
+                    <div class="w3-container w3-teal">
+                        <h2>Create a New Task</h2>
+                        <span
+                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                            onclick="document.getElementById('create-form').style.display='none'"
+                            >&times;</span
+                        >
+                    </div>
 
-          <p id="searchResults">Results will appear here.</p>
+                    <form class="w3-container" action="/create" method="post">
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <label class="w3-label">Title</label>
+                                <input
+                                    class="w3-input"
+                                    type="text"
+                                    name="Title"
+                                    id="Title"
+                                    required
+                                />
+                            </div>
+                            <div class="w3-half">
+                                <label class="w3-label">Type</label>
+                                <select
+                                    class="w3-select"
+                                    name="NoteType"
+                                    id="NoteType"
+                                    onchange="handleNoteTypeChange();"
+                                    required
+                                >
+                                    <option value="Note" selected>Note</option>
+                                    <option value="Task">Task</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="w3-row-padding" id="TaskCompletionTime">
+                            <div class="w3-half">
+                                <label class="w3-label">Completion Time</label>
+                                <input
+                                    class="w3-input"
+                                    type="time"
+                                    name="TaskCompletionTime"
+                                />
+                            </div>
+                            <div class="w3-half" id="TaskCompletionDate">
+                                <label class="w3-label">Completion Date</label>
+                                <input
+                                    class="w3-input"
+                                    type="date"
+                                    name="TaskCompletionDate"
+                                />
+                            </div>
+                        </div>
+
+                        <label class="w3-label">Description</label>
+                        <textarea
+                            class="w3-input"
+                            name="Description"
+                            id="Description"
+                            required
+                        ></textarea>
+
+                        <label class="w3-label">Status</label>
+                        <select
+                            id="NoteStatus"
+                            class="w3-select"
+                            name="NoteStatus"
+                            onchange="updateDelegationDropdownCreate()"
+                            required
+                        >
+                            <option value="None" selected>None</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Delegated">Delegated</option>
+                        </select>
+                        <label class="w3-label">Delegation</label>
+                        <select
+                            class="w3-input"
+                            type="text"
+                            name="NoteDelegation"
+                            id="NoteDelegation"
+                        >
+                            <option value="" selected></option>
+                            <!-- Generate options from user data -->
+                            {{range $user := .AllUsers}}
+                            <option value="{{$user.Username}}">
+                                {{$user.Username}}
+                            </option>
+                            {{end}}
+                        </select>
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                                    type="submit"
+                                >
+                                    Create
+                                </button>
+                            </div>
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
+                                    type="button"
+                                    onclick="document.getElementById('create-form').style.display='none'"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <script>
-      function updateDelegatedTask(e) {
-        var editDelegatedForm = document.getElementById("edit-delegated-form");
-        // Display the "Edit Delegated Modal"
-        editDelegatedForm.style.display = "block";
+        <!-- Edit Modal -->
+        <div class="w3-container">
+            <div id="edit-form" class="w3-modal">
+                <div
+                    class="w3-modal-content w3-card-8 w3-animate-zoom"
+                    style="max-width: 600px"
+                >
+                    <!-- head -->
+                    <div class="w3-container w3-teal">
+                        <h2>Edit Task</h2>
+                        <span
+                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                            onclick="document.getElementById('edit-form').style.display='none';"
+                        >
+                            &times;
+                        </span>
+                    </div>
 
-        // Get the data attributes from the button element
-        var id = e.getAttribute("data-noteid");
-        var title = e.getAttribute("data-title");
-        var description = e.getAttribute("data-description");
-        var type = e.getAttribute("data-notetype");
-        var completionTime = e.getAttribute("data-completiontime");
-        var completionDate = e.getAttribute("data-completiondate");
-        var status = e.getAttribute("data-notestatus");
-        var delegation = e.getAttribute("data-delegation");
+                    <form class="w3-container" action="/update" method="post">
+                        <input type="hidden" name="Id" id="taskIdToUpdate" />
 
-        console.log("Completion Time:", completionTime);
-        console.log("Completion Date:", completionDate);
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <label class="w3-label">Title</label>
+                                <input
+                                    class="w3-input"
+                                    type="text"
+                                    id="editTitle"
+                                    name="Title"
+                                    required
+                                />
+                            </div>
 
-        // Populate the "Edit Delegated Modal" fields with the data
-        document.getElementById("delegatedTaskIdToUpdate").value = id;
-        document.getElementById("DelegatedTitle").value = title;
-        // Set other fields as needed (type, completionTime, completionDate, status, delegation)
-        document.getElementById("DelegatedNoteType").value = type;
-        // Convert completionTime from "02:00 PM" to "14:00"
+                            <div class="w3-half">
+                                <label class="w3-label">Note/Task</label>
+                                <select
+                                    class="w3-select"
+                                    id="editNoteType"
+                                    name="NoteType"
+                                    onchange="editHandleNoteTypeChange()"
+                                    required
+                                >
+                                    <option value="Note">Note</option>
+                                    <option value="Task">Task</option>
+                                </select>
+                            </div>
+                        </div>
 
-        document.getElementById("DelegatedDescription").value = description;
-        document.getElementById("DelegatedNoteStatus").value = status;
-        document.getElementById("updateDelegatedNote").value = delegation;
+                        <div class="w3-row-padding">
+                            <div class="w3-half" id="editTaskCompletionTimeDiv">
+                                <label class="w3-label">Completion Time</label>
+                                <input
+                                    class="w3-input"
+                                    type="time"
+                                    id="editTaskCompletionTime"
+                                    name="TaskCompletionTime"
+                                />
+                            </div>
 
-        document.getElementById("DelegatedTaskCompletionTime").value =
-          completionTime;
+                            <div class="w3-half" id="editTaskCompletionDateDiv">
+                                <label class="w3-label">Completion Date</label>
+                                <input
+                                    class="w3-input"
+                                    type="date"
+                                    id="editTaskCompletionDate"
+                                    name="TaskCompletionDate"
+                                />
+                            </div>
+                        </div>
 
-        // Convert completionDate from "23-10-2024" to "2024-10-23"
+                        <label class="w3-label">Description</label>
+                        <textarea
+                            class="w3-input"
+                            name="Description"
+                            id="editDescription"
+                            required
+                        ></textarea>
 
-        document.getElementById("DelegatedTaskCompletionDate").value =
-          completionDate;
+                        <label class="w3-label">Status</label>
+                        <select
+                            class="w3-input"
+                            id="editNoteStatus"
+                            name="NoteStatus"
+                            onchange="updateDelegationDropdown();"
+                        >
+                            <option value="None">None</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Delegated">Delegated</option>
+                        </select>
 
-        // You may also need to fetch additional data if required, like shared users
-        // fetchAdditionalData(id);
-      }
+                        <label class="w3-label">Delegation</label>
 
-      function updateTask(e) {
-        var editForm = document.getElementById("edit-form");
-        // Display update form
-        editForm.style.display = "block";
+                        <select
+                            class="w3-input"
+                            id="editNoteDelegation"
+                            name="NoteDelegation"
+                        >
+                            <!-- Generate options from user data -->
+                            {{range $user := .AllUsers}}
+                            <option value="{{$user.Username}}">
+                                {{$user.Username}}
+                            </option>
+                            {{end}}
+                        </select>
 
-        var id = e.getAttribute("data-noteid");
-        var title = e.getAttribute("data-title");
-        var description = e.getAttribute("data-description");
-        var type = e.getAttribute("data-notetype");
-        var completionTime = e.getAttribute("data-completiontime");
-        var completionDate = e.getAttribute("data-completiondate");
-        var status = e.getAttribute("data-notestatus");
-        var delegation = e.getAttribute("data-delegation");
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                                    type="submit"
+                                >
+                                    Save
+                                </button>
+                            </div>
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
+                                    type="button"
+                                    onclick="document.getElementById('edit-form').style.display='none'"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-        //fetchNoteData(id);
+        <!-- Edit Delegated Form Modal -->
+        <div class="w3-container">
+            <div id="edit-delegated-form" class="w3-modal">
+                <div
+                    class="w3-modal-content w3-card-8 w3-animate-zoom"
+                    style="max-width: 600px"
+                >
+                    <div class="w3-container w3-teal">
+                        <h2>Edit Delegated Task</h2>
+                        <span
+                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                            onclick="document.getElementById('edit-delegated-form').style.display='none';"
+                            >&times;</span
+                        >
+                    </div>
+                    <form class="w3-container" action="/update" method="post">
+                        <input
+                            type="hidden"
+                            name="Id"
+                            id="delegatedTaskIdToUpdate"
+                        />
+                        <input
+                            type="hidden"
+                            name="NoteDelegation"
+                            id="updateDelegatedNote"
+                        />
 
-        // Populate the edit form fields with the note data
-        document.getElementById("Title").value = title;
-        document.getElementById("NoteType").value = type;
-        document.getElementById("TaskCompletionTime").value = completionTime;
-        document.getElementById("TaskCompletionDate").value = completionDate;
-        document.getElementById("Description").value = description;
-        document.getElementById("NoteStatus").value = status;
-        document.getElementById("NoteDelegation").value = delegation;
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <label class="w3-label">Title</label>
+                                <input
+                                    class="w3-input"
+                                    type="text"
+                                    id="DelegatedTitle"
+                                    name="Title"
+                                    required
+                                />
+                            </div>
+                            <div class="w3-half">
+                                <label class="w3-label">Note/Task</label>
+                                <select
+                                    class="w3-select"
+                                    id="DelegatedNoteType"
+                                    onchange="DelegatedHandleNoteTypeChange();"
+                                    name="NoteType"
+                                    required
+                                >
+                                    <option value="Note">Note</option>
+                                    <option value="Task">Task</option>
+                                </select>
+                            </div>
+                        </div>
 
-        // Get task ID to update
+                        <div class="w3-row-padding">
+                            <div
+                                class="w3-half"
+                                id="DelegatedTaskCompletionTimeDiv"
+                            >
+                                <label class="w3-label">Completion Time</label>
+                                <input
+                                    class="w3-input"
+                                    type="time"
+                                    id="DelegatedTaskCompletionTime"
+                                    name="TaskCompletionTime"
+                                />
+                            </div>
+                            <div
+                                class="w3-half"
+                                id="DelegatedTaskCompletionDateDiv"
+                            >
+                                <label class="w3-label">Completion Date</label>
+                                <input
+                                    class="w3-input"
+                                    type="date"
+                                    id="DelegatedTaskCompletionDate"
+                                    name="TaskCompletionDate"
+                                />
+                            </div>
+                        </div>
 
-        var taskId = e.getAttribute("data-noteid");
-        document.getElementById("taskIdToUpdate").value = taskId;
-      }
+                        <label class="w3-label">Description</label>
+                        <textarea
+                            class="w3-input"
+                            name="Description"
+                            id="DelegatedDescription"
+                            required
+                        ></textarea>
 
-      function deleteTask(e) {
-        var deleteForm = document.getElementById("delete-form");
-        deleteForm.style.display = "block";
+                        <label class="w3-label">Status</label>
+                        <select
+                            class="w3-input"
+                            id="DelegatedNoteStatus"
+                            name="NoteStatus"
+                        >
+                            <option value="None">None</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Delegated">Delegated</option>
+                        </select>
 
-        // Get task ID to delete from the data attribute
-        var taskId = e.getAttribute("data-taskid");
+                        <div class="w3-row-padding">
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                                    type="submit"
+                                >
+                                    Save
+                                </button>
+                            </div>
+                            <div class="w3-half">
+                                <button
+                                    class="w3-btn w3-red w3-margin-top w3-margin-bottom w3-right"
+                                    type="button"
+                                    onclick="document.getElementById('edit-delegated-form').style.display='none'"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-        // Assuming taskId is a string, you can convert it to an integer using parseInt
-        var noteID = parseInt(taskId, 10);
+        <!-- Delete Modals -->
+        <div class="w3-container">
+            <div id="delete-form" class="w3-modal">
+                <div
+                    class="w3-modal-content w3-card-8 w3-animate-zoom"
+                    style="max-width: 600px"
+                >
+                    <!-- head -->
+                    <div class="w3-container w3-teal">
+                        <h2>Are you sure?</h2>
+                        <span
+                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                            onclick="document.getElementById('delete-form').style.display='none'"
+                            >&times;</span
+                        >
+                    </div>
 
-        // Now you have the noteID as an integer, and you can use it as needed
-        // For example, you can set it as the value of an input field
-        document.getElementById("taskIdToDelete").value = noteID;
-      }
+                    <form class="w3-container" action="/delete" method="post">
+                        <input type="hidden" name="Id" id="taskIdToDelete" />
+                        <div class="w3-center">
+                            <button
+                                class="w3-btn w3-red w3-margin-top w3-margin-bottom"
+                                type="submit"
+                            >
+                                Delete
+                            </button>
+                            <button
+                                type="button"
+                                class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                                onclick="document.getElementById('delete-form').style.display='none'"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-      function shareTask(e) {
-        var shareForm = document.getElementById("share-form");
-        shareForm.style.display = "block";
+        <!-- Options Modal -->
+        <div id="options-modal" class="w3-modal">
+            <div
+                class="w3-modal-content w3-card-8 w3-animate-zoom"
+                style="max-width: 600px"
+            >
+                <!-- Head -->
+                <div class="w3-container w3-teal">
+                    <h2>Share</h2>
+                    <span
+                        class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                        onclick="closeOptionsModal()"
+                        >&times;</span
+                    >
+                </div>
 
-        // Get task ID to delete from the data attribute
-        var taskId = e.getAttribute("data-noteid");
+                <!-- Shared Users Table -->
+                <h4 style="margin-left: 10px">Shared Users</h4>
 
-        // Assuming taskId is a string, you can convert it to an integer using parseInt
-        var noteID = parseInt(taskId, 10);
+                <table
+                    class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
+                >
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Editor</th>
+                            <th>Viewer</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sharedUsersTable">
+                        <!-- Shared users will be dynamically added here using JavaScript -->
+                    </tbody>
+                </table>
 
-        // Now you have the noteID as an integer, and you can use it as needed
-        // For example, you can set it as the value of an input field
-        document.getElementById("taskIdToShare").value = noteID;
-        /*var form = document.getElementById("share-note");
+                <h4 style="margin-left: 10px">Share note</h4>
+                <!-- Share Form -->
+                <form class="w3-container" action="/share" method="post">
+                    <input type="hidden" id="taskIdToShare" name="Id" />
+
+                    <label class="w3-label">Select User</label>
+                    <select
+                        class="w3-select"
+                        name="SharedUsername"
+                        required
+                        id="userDropdown"
+                    >
+                        <!-- Options will be populated using JavaScript -->
+                    </select>
+
+                    <label class="w3-label">Privileges</label>
+                    <div class="w3-container">
+                        <input
+                            class="w3-radio"
+                            type="radio"
+                            name="Privileges"
+                            value="editor"
+                            checked
+                        />
+                        <label class="w3-validate">Editor</label>
+
+                        <input
+                            class="w3-radio"
+                            type="radio"
+                            name="Privileges"
+                            value="viewer"
+                        />
+                        <label class="w3-validate">Viewer</label>
+                    </div>
+
+                    <button class="w3-btn w3-teal w3-margin-top" type="submit">
+                        Share
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!--Remove share modal-->
+        <div class="w3-container">
+            <div id="remove-form" class="w3-modal">
+                <div
+                    class="w3-modal-content w3-card-8 w3-animate-zoom"
+                    style="max-width: 600px"
+                >
+                    <!-- head -->
+                    <div class="w3-container w3-teal">
+                        <h2>Are you sure?</h2>
+                        <span
+                            class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                            onclick="document.getElementById('remove-form').style.display='none'"
+                            >&times;</span
+                        >
+                    </div>
+
+                    <form
+                        class="w3-container"
+                        action="/remove-shared-note"
+                        method="post"
+                    >
+                        <input
+                            type="hidden"
+                            name="noteID"
+                            id="noteIdToRemove"
+                        />
+
+                        <input
+                            type="hidden"
+                            name="username"
+                            id="usernameToRemove"
+                        />
+                        <div class="w3-center">
+                            <button
+                                class="w3-btn w3-red w3-margin-top w3-margin-bottom"
+                                type="submit"
+                            >
+                                Remove
+                            </button>
+                            <button
+                                type="button"
+                                class="w3-btn w3-teal w3-margin-top w3-margin-bottom"
+                                onclick="document.getElementById('remove-form').style.display='none'"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Apply Privilege Changes Modal -->
+        <div id="applyPrivilegeModal" class="w3-modal">
+            <div
+                class="w3-modal-content w3-card-8 w3-animate-zoom"
+                style="max-width: 400px"
+            >
+                <div class="w3-container w3-teal">
+                    <h2>Apply Privilege Changes</h2>
+                    <span
+                        class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                        onclick="closeApplyPrivilegeModal()"
+                        >&times;</span
+                    >
+                </div>
+                <!-- Privilege Changes Form -->
+                <form
+                    class="w3-container"
+                    action="/update-privileges"
+                    method="post"
+                >
+                    <!-- Hidden fields to store noteID and privileges -->
+                    <input
+                        type="hidden"
+                        id="usernametoUpdate"
+                        name="username"
+                    />
+                    <input type="hidden" id="noteIdToUpdate" name="noteID" />
+                    <input
+                        type="hidden"
+                        id="updatedPrivileges"
+                        name="privileges"
+                    />
+                    <button class="w3-btn w3-teal w3-margin-top" type="submit">
+                        Apply
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Find modal -->
+        <div id="find-form" class="w3-modal">
+            <div
+                class="w3-modal-content w3-card-8 w3-animate-zoom"
+                style="max-width: 600px"
+            >
+                <!-- Modal Header -->
+                <div class="w3-container w3-teal">
+                    <h2>Find Text</h2>
+                    <span
+                        class="w3-closebtn w3-hover-red w3-container w3-padding-8 w3-display-topright"
+                        onclick="closeFindModal();"
+                        >&times;</span
+                    >
+                </div>
+
+                <!-- Modal Content -->
+                <div class="w3-container">
+                    <!-- Prevent default form submission -->
+                    <input type="hidden" name="noteId" id="findNoteId" />
+                    <input
+                        type="text"
+                        id="searchInput"
+                        name="searchInput"
+                        class="w3-input"
+                        placeholder="Enter text to find"
+                    />
+                    <button class="w3-btn w3-blue" onclick="findText();">
+                        Find
+                    </button>
+
+                    <p id="searchResults">Results will appear here.</p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function updateDelegatedTask(e) {
+                var editDelegatedForm = document.getElementById(
+                    "edit-delegated-form"
+                );
+                // Display the "Edit Delegated Modal"
+                editDelegatedForm.style.display = "block";
+
+                // Get the data attributes from the button element
+                var id = e.getAttribute("data-noteid");
+                var title = e.getAttribute("data-title");
+                var description = e.getAttribute("data-description");
+                var type = e.getAttribute("data-notetype");
+                var completionTime = e.getAttribute("data-completiontime");
+                var completionDate = e.getAttribute("data-completiondate");
+                var status = e.getAttribute("data-notestatus");
+                var delegation = e.getAttribute("data-delegation");
+
+                console.log("Completion Time:", completionTime);
+                console.log("Completion Date:", completionDate);
+
+                // Populate the "Edit Delegated Modal" fields with the data
+                document.getElementById("delegatedTaskIdToUpdate").value = id;
+                document.getElementById("DelegatedTitle").value = title;
+                // Set other fields as needed (type, completionTime, completionDate, status, delegation)
+                document.getElementById("DelegatedNoteType").value = type;
+                // Convert completionTime from "02:00 PM" to "14:00"
+
+                document.getElementById("DelegatedDescription").value =
+                    description;
+                document.getElementById("DelegatedNoteStatus").value = status;
+                document.getElementById("updateDelegatedNote").value =
+                    delegation;
+
+                var completionDate = e.getAttribute("data-completiondate");
+                var dateParts = completionDate.split("-");
+                var formattedDate =
+                    dateParts[2] + "-" + dateParts[1] + "-" + dateParts[0];
+
+                document.getElementById("DelegatedTaskCompletionDate").value =
+                    formattedDate;
+
+                var completionTime = e.getAttribute("data-completiontime");
+                var timeParts = completionTime.split(" ");
+                var time = timeParts[0];
+                var meridian = timeParts[1];
+                var hour = parseInt(time.split(":")[0]);
+                var minute = parseInt(time.split(":")[1]);
+
+                if (meridian === "PM" && hour < 12) {
+                    hour += 12;
+                }
+
+                var formattedTime =
+                    hour.toString().padStart(2, "0") +
+                    ":" +
+                    minute.toString().padStart(2, "0");
+
+                document.getElementById("DelegatedTaskCompletionTime").value =
+                    formattedTime;
+
+                DelegatedHandleNoteTypeChange();
+
+                // You may also need to fetch additional data if required, like shared users
+                // fetchAdditionalData(id);
+            }
+
+            function updateTask(e) {
+                var editForm = document.getElementById("edit-form");
+                // Display update form
+                editForm.style.display = "block";
+
+                var id = e.getAttribute("data-noteid");
+                var title = e.getAttribute("data-title");
+                var description = e.getAttribute("data-description");
+                var type = e.getAttribute("data-notetype");
+                var completionTime = e.getAttribute("data-completiontime");
+                var completionDate = e.getAttribute("data-completiondate");
+                var status = e.getAttribute("data-notestatus");
+                var delegation = e.getAttribute("data-delegation");
+
+                //fetchNoteData(id);
+
+                // Populate the edit form fields with the note data
+                document.getElementById("editTitle").value = title;
+                document.getElementById("editNoteType").value = type;
+                document.getElementById("editDescription").value = description;
+                document.getElementById("editNoteStatus").value = status;
+                document.getElementById("editNoteDelegation").value =
+                    delegation;
+
+                var completionDate = e.getAttribute("data-completiondate");
+                var dateParts = completionDate.split("-");
+                var formattedDate =
+                    dateParts[2] + "-" + dateParts[1] + "-" + dateParts[0];
+
+                document.getElementById("editTaskCompletionDate").value =
+                    formattedDate;
+
+                var completionTime = e.getAttribute("data-completiontime");
+                var timeParts = completionTime.split(" ");
+                var time = timeParts[0];
+                var meridian = timeParts[1];
+                var hour = parseInt(time.split(":")[0]);
+                var minute = parseInt(time.split(":")[1]);
+
+                if (meridian === "PM" && hour < 12) {
+                    hour += 12;
+                }
+
+                var formattedTime =
+                    hour.toString().padStart(2, "0") +
+                    ":" +
+                    minute.toString().padStart(2, "0");
+
+                document.getElementById("editTaskCompletionTime").value =
+                    formattedTime;
+                // Get task ID to update
+
+                var taskId = e.getAttribute("data-noteid");
+                document.getElementById("taskIdToUpdate").value = taskId;
+                // Call the updateDelegationDropdown function to enable or disable the delegation dropdown based on the note status
+                updateDelegationDropdown();
+                editHandleNoteTypeChange();
+            }
+
+            function deleteTask(e) {
+                var deleteForm = document.getElementById("delete-form");
+                deleteForm.style.display = "block";
+
+                // Get task ID to delete from the data attribute
+                var taskId = e.getAttribute("data-taskid");
+
+                // Assuming taskId is a string, you can convert it to an integer using parseInt
+                var noteID = parseInt(taskId, 10);
+
+                // Now you have the noteID as an integer, and you can use it as needed
+                // For example, you can set it as the value of an input field
+                document.getElementById("taskIdToDelete").value = noteID;
+            }
+
+            function shareTask(e) {
+                var shareForm = document.getElementById("share-form");
+                shareForm.style.display = "block";
+
+                // Get task ID to delete from the data attribute
+                var taskId = e.getAttribute("data-noteid");
+
+                // Assuming taskId is a string, you can convert it to an integer using parseInt
+                var noteID = parseInt(taskId, 10);
+
+                // Now you have the noteID as an integer, and you can use it as needed
+                // For example, you can set it as the value of an input field
+                document.getElementById("taskIdToShare").value = noteID;
+                /*var form = document.getElementById("share-note");
                 form.submit();*/
-      }
-
-      function openRemoveModal(noteID) {
-        document.getElementById("remove-form").style.display = "block";
-        document.getElementById("noteIdToRemove").value = noteID;
-        var username = document.getElementById("username").value;
-        document.getElementById("usernameToRemove").value = username;
-      }
-
-      function openOptions(button) {
-        var noteId = button.getAttribute("data-noteid");
-        document.getElementById("taskIdToShare").value = noteId;
-
-        // Make an AJAX request to retrieve note details
-        $.ajax({
-          url: "/getSharedUsersForNote/" + noteId, // Updated endpoint
-          method: "GET",
-          dataType: "json",
-          success: function (data) {
-            // Sort the shared users array by username
-            data.sort(function (a, b) {
-              var usernameA = a.Username.String.toLowerCase();
-              var usernameB = b.Username.String.toLowerCase();
-              return usernameA.localeCompare(usernameB);
-            });
-            // Populate the modal with shared users' data
-            // For example:
-            var sharedUsersTable = document.getElementById("sharedUsersTable");
-            sharedUsersTable.innerHTML = ""; // Clear existing content
-
-            for (var i = 0; i < data.length; i++) {
-              var user = data[i];
-              var row = sharedUsersTable.insertRow(
-                sharedUsersTable.rows.length
-              );
-
-              var usernameCell = row.insertCell(0);
-              usernameCell.innerHTML =
-                "<span id=usernametoTake>" + user.Username.String + "</span>"; // Populate username
-
-              var editorRadio = row
-                .insertCell(1)
-                .appendChild(document.createElement("input"));
-              editorRadio.id = "editorRadio_" + user.Username.String;
-              editorRadio.type = "radio";
-              editorRadio.name = "updatedPrivileges_" + user.Username.String;
-              editorRadio.value = "editor";
-              editorRadio.checked = user.Privileges.String === "editor";
-
-              var viewerRadio = row
-                .insertCell(2)
-                .appendChild(document.createElement("input"));
-              viewerRadio.id = "viewerRadio_" + user.Username.String;
-              viewerRadio.type = "radio";
-              viewerRadio.name = "updatedPrivileges_" + user.Username.String;
-              viewerRadio.value = "viewer";
-              viewerRadio.checked = user.Privileges.String === "viewer";
-
-              var actionsCell = row.insertCell(3);
-              actionsCell.innerHTML =
-                '<button class="w3-btn w3-red" onclick="stopSharing(this)" data-username="' +
-                user.Username.String +
-                '" data-noteid="' +
-                noteId +
-                '">Stop Sharing</button>' +
-                '<button class="w3-btn w3-teal" onclick="openApplyPrivilegeModal(' +
-                noteId +
-                ", '" +
-                user.Username.String +
-                "', '" +
-                user.Privileges.String +
-                "')\">Apply Changes</button>";
-
-              // Populate Actions button
             }
-          },
-          error: function (error) {
-            console.log("Failed to fetch shared users: " + error);
-          },
-        });
 
-        // Use AJAX to retrieve the list of unshared users
-        $.ajax({
-          url: "/getUnsharedUsersForNote/" + noteId, // Replace with your server endpoint
-          method: "GET",
-          dataType: "json",
-          success: function (data) {
-            console.log("Received data:", data); // Log the data
-
-            // Populate the dropdown with unshared users
-            var userDropdown = document.getElementById("userDropdown");
-            userDropdown.innerHTML = ""; // Clear existing options
-
-            if (data && data.length > 0) {
-              for (var i = 0; i < data.length; i++) {
-                var user = data[i];
-                console.log("Username[" + i + "]:", user.username); // Log the username
-
-                var option = document.createElement("option");
-                option.value = user.username;
-                option.text = user.username;
-                userDropdown.appendChild(option);
-              }
-            } else {
-              console.error("No data received or data is empty");
+            function openRemoveModal(noteID) {
+                document.getElementById("remove-form").style.display = "block";
+                document.getElementById("noteIdToRemove").value = noteID;
+                var username = document.getElementById("username").value;
+                document.getElementById("usernameToRemove").value = username;
             }
-          },
-          error: function (error) {
-            console.error("Failed to fetch unshared users: " + error);
-          },
-        });
 
-        document.getElementById("options-modal").style.display = "block";
-      }
+            function openOptions(button) {
+                var noteId = button.getAttribute("data-noteid");
+                document.getElementById("taskIdToShare").value = noteId;
 
-      function closeOptionsModal() {
-        document.getElementById("options-modal").style.display = "none";
-      }
+                // Make an AJAX request to retrieve note details
+                $.ajax({
+                    url: "/getSharedUsersForNote/" + noteId, // Updated endpoint
+                    method: "GET",
+                    dataType: "json",
+                    success: function (data) {
+                        // Sort the shared users array by username
+                        data.sort(function (a, b) {
+                            var usernameA = a.Username.String.toLowerCase();
+                            var usernameB = b.Username.String.toLowerCase();
+                            return usernameA.localeCompare(usernameB);
+                        });
+                        // Populate the modal with shared users' data
+                        // For example:
+                        var sharedUsersTable =
+                            document.getElementById("sharedUsersTable");
+                        sharedUsersTable.innerHTML = ""; // Clear existing content
 
-      function stopSharing(button) {
-        // Retrieve the username and note ID from the button's data attributes
-        var username = button.getAttribute("data-username");
-        var noteId = button.getAttribute("data-noteid");
+                        for (var i = 0; i < data.length; i++) {
+                            var user = data[i];
+                            var row = sharedUsersTable.insertRow(
+                                sharedUsersTable.rows.length
+                            );
 
-        // Store the username and note ID in the modal form
-        document.getElementById("noteIdToRemove").value = noteId;
+                            var usernameCell = row.insertCell(0);
+                            usernameCell.innerHTML =
+                                "<span id=usernametoTake>" +
+                                user.Username.String +
+                                "</span>"; // Populate username
 
-        document.getElementById("usernameToRemove").value = username;
+                            var editorRadio = row
+                                .insertCell(1)
+                                .appendChild(document.createElement("input"));
+                            editorRadio.id =
+                                "editorRadio_" + user.Username.String;
+                            editorRadio.type = "radio";
+                            editorRadio.name =
+                                "updatedPrivileges_" + user.Username.String;
+                            editorRadio.value = "editor";
+                            editorRadio.checked =
+                                user.Privileges.String === "editor";
 
-        // Display the "Remove share" modal
-        document.getElementById("remove-form").style.display = "block";
-      }
+                            var viewerRadio = row
+                                .insertCell(2)
+                                .appendChild(document.createElement("input"));
+                            viewerRadio.id =
+                                "viewerRadio_" + user.Username.String;
+                            viewerRadio.type = "radio";
+                            viewerRadio.name =
+                                "updatedPrivileges_" + user.Username.String;
+                            viewerRadio.value = "viewer";
+                            viewerRadio.checked =
+                                user.Privileges.String === "viewer";
 
-      function updatePrivileges() {
-        var selectedUsername =
-          document.getElementById("selectedUsername").value;
-        var selectedPrivileges = document.querySelector(
-          'input[name="updatedPrivileges_' + selectedUsername + '"]:checked'
-        );
+                            var actionsCell = row.insertCell(3);
+                            actionsCell.innerHTML =
+                                '<button class="w3-btn w3-red" onclick="stopSharing(this)" data-username="' +
+                                user.Username.String +
+                                '" data-noteid="' +
+                                noteId +
+                                '">Stop Sharing</button>' +
+                                '<button class="w3-btn w3-teal" onclick="openApplyPrivilegeModal(' +
+                                noteId +
+                                ", '" +
+                                user.Username.String +
+                                "', '" +
+                                user.Privileges.String +
+                                "')\">Apply Changes</button>";
 
-        if (selectedPrivileges) {
-          var updatedPrivileges = selectedPrivileges.value;
+                            // Populate Actions button
+                        }
+                    },
+                    error: function (error) {
+                        console.log("Failed to fetch shared users: " + error);
+                    },
+                });
 
-          // Set the values of the hidden fields in the form
-          document.getElementById("usernametoUpdate").value = selectedUsername;
-          document.getElementById("updatedPrivileges").value =
-            updatedPrivileges;
+                // Use AJAX to retrieve the list of unshared users
+                $.ajax({
+                    url: "/getUnsharedUsersForNote/" + noteId, // Replace with your server endpoint
+                    method: "GET",
+                    dataType: "json",
+                    success: function (data) {
+                        console.log("Received data:", data); // Log the data
 
-          // Make an AJAX request to update the privileges
-          $.ajax({
-            url: "/update-privileges",
-            method: "POST",
-            data: {
-              username: selectedUsername,
-              privileges: updatedPrivileges,
-            },
-            success: function (data) {
-              // Handle success (e.g., show a success message)
-              alert("Privileges updated successfully");
-            },
-            error: function (error) {
-              // Handle errors (e.g., show an error message)
-              alert("Failed to update privileges: " + error.responseText);
-            },
-          });
-        } else {
-          alert("Please select a privilege.");
-        }
-      }
+                        // Populate the dropdown with unshared users
+                        var userDropdown =
+                            document.getElementById("userDropdown");
+                        userDropdown.innerHTML = ""; // Clear existing options
 
-      function openApplyPrivilegeModal(noteID, username) {
-        var noteId = noteID;
+                        if (data && data.length > 0) {
+                            for (var i = 0; i < data.length; i++) {
+                                var user = data[i];
+                                console.log(
+                                    "Username[" + i + "]:",
+                                    user.username
+                                ); // Log the username
 
-        // Determine privileges based on the selected radio button
-        var editorRadio = document.getElementById("editorRadio_" + username);
-        var viewerRadio = document.getElementById("viewerRadio_" + username);
+                                var option = document.createElement("option");
+                                option.value = user.username;
+                                option.text = user.username;
+                                userDropdown.appendChild(option);
+                            }
+                        } else {
+                            console.error("No data received or data is empty");
+                        }
+                    },
+                    error: function (error) {
+                        console.error(
+                            "Failed to fetch unshared users: " + error
+                        );
+                    },
+                });
 
-        var privileges = "";
-        if (editorRadio.checked) {
-          privileges = "editor";
-        } else if (viewerRadio.checked) {
-          privileges = "viewer";
-        }
-
-        // Set the values of the hidden fields in the Apply Privilege modal form
-        document.getElementById("noteIdToUpdate").value = noteId;
-        document.getElementById("updatedPrivileges").value = privileges;
-        document.getElementById("usernametoUpdate").value = username;
-
-        // Open Apply Privilege Changes modal
-        document.getElementById("applyPrivilegeModal").style.display = "block";
-      }
-
-      function closeApplyPrivilegeModal() {
-        // Close the Apply Privilege Changes modal
-        document.getElementById("applyPrivilegeModal").style.display = "none";
-      }
-
-      function openFindModal(button) {
-        var noteId = button.getAttribute("find-noteID");
-        document.getElementById("findNoteId").value = noteId;
-        document.getElementById("find-form").style.display = "block";
-      }
-
-      function closeFindModal() {
-        document.getElementById("find-form").style.display = "none";
-      }
-      function findText() {
-        var searchText = document.getElementById("searchInput").value;
-        var noteId = document.getElementById("findNoteId").value;
-
-        // Clear previous search results
-        document.getElementById("searchResults").textContent = "";
-
-        // Example logic: You can search for the text in your notes' content and update the "searchResults" with the search results.
-        findTextInNotes(searchText, noteId);
-      }
-
-      document
-        .getElementById("NoteStatus")
-        .addEventListener("change", function () {
-          var status = this.value;
-          var delegationDropdown = document.getElementById("NoteDelegation");
-
-          if (status === "Delegated") {
-            delegationDropdown.disabled = false;
-          } else {
-            delegationDropdown.disabled = true;
-          }
-        });
-
-      function fetchNoteData(noteId, callback) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/getNoteData/" + noteId, true);
-        xhr.onreadystatechange = function () {
-          if (xhr.readyState == 4 && xhr.status == 200) {
-            var noteData = JSON.parse(xhr.responseText);
-            console.log(noteData); // Log the note data
-            // Populate the form fields with the note data
-            document.getElementById("Title").value = noteData.title;
-            document.getElementById("NoteType").value = noteData.note_type;
-            document.getElementById("TaskCompletionTime").value = noteData
-              .task_completion_time.Valid
-              ? convertTime12to24(noteData.task_completion_time.String)
-              : "";
-
-            document.getElementById("TaskCompletionDate").value = noteData
-              .task_completion_date.Valid
-              ? convertDate(noteData.task_completion_date.String)
-              : "";
-
-            // Add this line to check the value of noteData.description
-            console.log("Description from noteData: " + noteData.description);
-
-            // Add this line to check if the correct element is selected
-            console.log(
-              "Description input element: " +
-                document.getElementById("Description")
-            );
-
-            // Populate the Description field
-            document.getElementById("Description").value = noteData.description;
-
-            // Add this line to check if the Description field is populated
-            console.log(
-              "Description field value: " +
-                document.getElementById("Description").value
-            );
-
-            document.getElementById("NoteStatus").value = noteData.note_status
-              .Valid
-              ? noteData.note_status.String
-              : "";
-            document.getElementById("NoteDelegation").value = noteData
-              .note_delegation.Valid
-              ? noteData.note_delegation.String
-              : "";
-            // Call the callback function
-            if (typeof callback === "function") {
-              callback();
+                document.getElementById("options-modal").style.display =
+                    "block";
             }
-          }
-        };
-        xhr.send();
-      }
 
-      function removeDelegation(button) {
-        // Assuming that 'button' is the button element that was clicked
-        var noteID = button.getAttribute("data-taskid");
-
-        // You can use an AJAX request to send a request to your server to remove the delegation
-        // Example:
-        // Replace the URL and method with your server endpoint and HTTP method
-        var url = "/remove-delegation";
-        var method = "POST";
-
-        // Create a new XMLHttpRequest object
-        var xhr = new XMLHttpRequest();
-
-        // Configure the request
-        xhr.open(method, url, true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-
-        // Define a callback function to handle the response from the server
-        xhr.onreadystatechange = function () {
-          if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 200) {
-              // The delegation was successfully removed
-              alert("Delegation removed successfully.");
-              // You can also update the UI as needed, e.g., remove the row from the table
-              var row = button.closest("tr");
-              row.parentNode.removeChild(row);
-            } else {
-              // Handle errors or display an error message
-              alert("Error: Unable to remove delegation.");
+            function closeOptionsModal() {
+                document.getElementById("options-modal").style.display = "none";
             }
-          }
-        };
 
-        // Send the request with the noteID in the request payload
-        xhr.send(JSON.stringify({ noteID: noteID }));
-      }
+            function stopSharing(button) {
+                // Retrieve the username and note ID from the button's data attributes
+                var username = button.getAttribute("data-username");
+                var noteId = button.getAttribute("data-noteid");
 
-      function findTextInNotes(searchText, noteId) {
-        // Use AJAX to find text in a note with a GET request
-        $.ajax({
-          url: "/find/" + noteId,
-          method: "GET",
-          data: { searchInput: searchText },
-          dataType: "json",
-          success: function (data) {
-            console.log("Received search results:", data);
+                // Store the username and note ID in the modal form
+                document.getElementById("noteIdToRemove").value = noteId;
 
-            if (data && data.length > 0) {
-              var totalCount = 0; // Initialize the total count variable
-              for (var i = 0; i < data.length; i++) {
-                var result = data[i];
-                var count = result.Count; // Parse the count as an integer
-                totalCount += count; // Update the total count
-              }
+                document.getElementById("usernameToRemove").value = username;
 
-              // Update the HTML element with the total count
-              var searchResults =
-                "Total occurrences in the note: " + totalCount;
-              document.getElementById("searchResults").textContent =
-                searchResults;
-            } else {
-              // Display a message when no results are found
-              document.getElementById("searchResults").textContent =
-                "No matching results found";
+                // Display the "Remove share" modal
+                document.getElementById("remove-form").style.display = "block";
             }
-          },
-          error: function (error) {
-            console.error("Failed to perform the search: " + error);
-          },
-        });
 
-        function convertTime12to24(time12) {
-          // Split the time into hours, minutes, and AM/PM
-          const [time, period] = time12.split(" ");
-          const [hours, minutes] = time.split(":");
+            function updatePrivileges() {
+                var selectedUsername =
+                    document.getElementById("selectedUsername").value;
+                var selectedPrivileges = document.querySelector(
+                    'input[name="updatedPrivileges_' +
+                        selectedUsername +
+                        '"]:checked'
+                );
 
-          let hours24 = parseInt(hours);
-          if (period === "PM" && hours24 !== 12) {
-            hours24 += 12;
-          } else if (period === "AM" && hours24 === 12) {
-            hours24 = 0;
-          }
+                if (selectedPrivileges) {
+                    var updatedPrivileges = selectedPrivileges.value;
 
-          // Ensure two-digit formatting for hours and minutes
-          const formattedHours = String(hours24).padStart(2, "0");
-          const formattedMinutes = minutes.padStart(2, "0");
+                    // Set the values of the hidden fields in the form
+                    document.getElementById("usernametoUpdate").value =
+                        selectedUsername;
+                    document.getElementById("updatedPrivileges").value =
+                        updatedPrivileges;
 
-          return `${formattedHours}:${formattedMinutes}`;
-        }
+                    // Make an AJAX request to update the privileges
+                    $.ajax({
+                        url: "/update-privileges",
+                        method: "POST",
+                        data: {
+                            username: selectedUsername,
+                            privileges: updatedPrivileges,
+                        },
+                        success: function (data) {
+                            // Handle success (e.g., show a success message)
+                            alert("Privileges updated successfully");
+                        },
+                        error: function (error) {
+                            // Handle errors (e.g., show an error message)
+                            alert(
+                                "Failed to update privileges: " +
+                                    error.responseText
+                            );
+                        },
+                    });
+                } else {
+                    alert("Please select a privilege.");
+                }
+            }
 
-        function convertDate(date) {
-          // Split the date into day, month, and year
-          const [day, month, year] = date.split("-");
+            function openApplyPrivilegeModal(noteID, username) {
+                var noteId = noteID;
 
-          // Format the date as "YYYY-MM-DD"
-          return `${year}-${month}-${day}`;
-        }
-      }
-    </script>
-  </body>
+                // Determine privileges based on the selected radio button
+                var editorRadio = document.getElementById(
+                    "editorRadio_" + username
+                );
+                var viewerRadio = document.getElementById(
+                    "viewerRadio_" + username
+                );
+
+                var privileges = "";
+                if (editorRadio.checked) {
+                    privileges = "editor";
+                } else if (viewerRadio.checked) {
+                    privileges = "viewer";
+                }
+
+                // Set the values of the hidden fields in the Apply Privilege modal form
+                document.getElementById("noteIdToUpdate").value = noteId;
+                document.getElementById("updatedPrivileges").value = privileges;
+                document.getElementById("usernametoUpdate").value = username;
+
+                // Open Apply Privilege Changes modal
+                document.getElementById("applyPrivilegeModal").style.display =
+                    "block";
+            }
+
+            function closeApplyPrivilegeModal() {
+                // Close the Apply Privilege Changes modal
+                document.getElementById("applyPrivilegeModal").style.display =
+                    "none";
+            }
+
+            function openFindModal(button) {
+                var noteId = button.getAttribute("find-noteID");
+                document.getElementById("findNoteId").value = noteId;
+                document.getElementById("find-form").style.display = "block";
+            }
+
+            function closeFindModal() {
+                document.getElementById("find-form").style.display = "none";
+            }
+            function findText() {
+                var searchText = document.getElementById("searchInput").value;
+                var noteId = document.getElementById("findNoteId").value;
+
+                // Clear previous search results
+                document.getElementById("searchResults").textContent = "";
+
+                // Example logic: You can search for the text in your notes' content and update the "searchResults" with the search results.
+                findTextInNotes(searchText, noteId);
+            }
+            // disables delegation dropdown when note status is != delegated in edit modal
+            function updateDelegationDropdown() {
+                var status = document.getElementById("editNoteStatus").value;
+                var delegationDropdown =
+                    document.getElementById("editNoteDelegation");
+
+                if (status === "Delegated") {
+                    delegationDropdown.disabled = false;
+                } else {
+                    delegationDropdown.disabled = true;
+                    delegationDropdown.value = ""; // Clear the value of the delegation dropdown
+                }
+            }
+
+            function updateDelegationDropdownCreate() {
+                var status = document.getElementById("NoteStatus").value;
+                var delegationDropdown =
+                    document.getElementById("NoteDelegation");
+
+                if (status === "Delegated") {
+                    delegationDropdown.disabled = false;
+                } else {
+                    delegationDropdown.disabled = true;
+                    delegationDropdown.value = ""; // Clear the value of the delegation dropdown
+                }
+            }
+
+            // Function to handle note type change FOR CREATE MODAL
+            function handleNoteTypeChange() {
+                var noteType = document.getElementById("NoteType").value;
+                var completionTimeField =
+                    document.getElementById("TaskCompletionTime");
+                var completionDateField =
+                    document.getElementById("TaskCompletionDate");
+
+                if (noteType === "Task") {
+                    completionTimeField.style.display = "block";
+                    completionDateField.style.display = "block";
+                } else {
+                    completionTimeField.style.display = "none";
+                    completionDateField.style.display = "none";
+                    // Set the value to an empty string if not a task
+                    completionTimeField.value = "";
+                    completionDateField.value = "";
+                }
+            }
+
+            // Function to handle note type change FOR EDIT MODAL
+            function editHandleNoteTypeChange() {
+                var noteType = document.getElementById("editNoteType").value;
+                var completionTimeField = document.getElementById(
+                    "editTaskCompletionTimeDiv"
+                );
+                var completionDateField = document.getElementById(
+                    "editTaskCompletionDateDiv"
+                );
+
+                if (noteType === "Task") {
+                    completionTimeField.style.display = "block";
+                    completionDateField.style.display = "block";
+                } else {
+                    completionTimeField.style.display = "none";
+                    completionDateField.style.display = "none";
+                    // Set the value to an empty string if not a task
+                    completionTimeField.value = "";
+                    completionDateField.value = "";
+                }
+            }
+
+            // Function to handle note type change FOR EDIT MODAL
+            function DelegatedHandleNoteTypeChange() {
+                var noteType =
+                    document.getElementById("DelegatedNoteType").value;
+                var completionTimeField = document.getElementById(
+                    "DelegatedTaskCompletionTimeDiv"
+                );
+                var completionDateField = document.getElementById(
+                    "DelegatedTaskCompletionDateDiv"
+                );
+
+                if (noteType === "Task") {
+                    completionTimeField.style.display = "block";
+                    completionDateField.style.display = "block";
+                } else {
+                    completionTimeField.style.display = "none";
+                    completionDateField.style.display = "none";
+                    // Set the value to an empty string if not a task
+                    completionTimeField.value = "";
+                    completionDateField.value = "";
+                }
+            }
+
+            function removeDelegation(button) {
+                // Assuming that 'button' is the button element that was clicked
+                var noteID = button.getAttribute("data-taskid");
+
+                // You can use an AJAX request to send a request to your server to remove the delegation
+                // Example:
+                // Replace the URL and method with your server endpoint and HTTP method
+                var url = "/remove-delegation";
+                var method = "POST";
+
+                // Create a new XMLHttpRequest object
+                var xhr = new XMLHttpRequest();
+
+                // Configure the request
+                xhr.open(method, url, true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+
+                // Define a callback function to handle the response from the server
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        if (xhr.status === 200) {
+                            // The delegation was successfully removed
+                            alert("Delegation removed successfully.");
+                            // You can also update the UI as needed, e.g., remove the row from the table
+                            var row = button.closest("tr");
+                            row.parentNode.removeChild(row);
+                        } else {
+                            // Handle errors or display an error message
+                            alert("Error: Unable to remove delegation.");
+                        }
+                    }
+                };
+
+                // Send the request with the noteID in the request payload
+                xhr.send(JSON.stringify({ noteID: noteID }));
+            }
+
+            function findTextInNotes(searchText, noteId) {
+                // Use AJAX to find text in a note with a GET request
+                $.ajax({
+                    url: "/find/" + noteId,
+                    method: "GET",
+                    data: { searchInput: searchText },
+                    dataType: "json",
+                    success: function (data) {
+                        console.log("Received search results:", data);
+
+                        if (data && data.length > 0) {
+                            var totalCount = 0; // Initialize the total count variable
+                            for (var i = 0; i < data.length; i++) {
+                                var result = data[i];
+                                var count = result.Count; // Parse the count as an integer
+                                totalCount += count; // Update the total count
+                            }
+
+                            // Update the HTML element with the total count
+                            var searchResults =
+                                "Total occurrences in the note: " + totalCount;
+                            document.getElementById(
+                                "searchResults"
+                            ).textContent = searchResults;
+                        } else {
+                            // Display a message when no results are found
+                            document.getElementById(
+                                "searchResults"
+                            ).textContent = "No matching results found";
+                        }
+                    },
+                    error: function (error) {
+                        console.error("Failed to perform the search: " + error);
+                    },
+                });
+            }
+        </script>
+    </body>
 </html>
