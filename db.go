@@ -204,15 +204,14 @@ func (a *App) insertNoteIntoDatabase(note Note) error {
 
 
 func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note, error) {
-    query := `
-        SELECT notes.id, notes.title, notes.noteType, notes.description, notes.noteCreated,
-               notes.taskCompletionDate, notes.taskCompletionTime, notes.noteStatus, notes.noteDelegation,
-               user_shares.username AS shared_username
-        FROM notes
-        LEFT JOIN user_shares ON notes.id = user_shares.note_id
-        WHERE (notes.fts_text @@ plainto_tsquery('english', $1) AND notes.owner = $2)
-           OR (user_shares.username ILIKE $1)
-    `
+    query := `SELECT notes.id, notes.title, notes.noteType, notes.description, notes.noteCreated,
+				notes.taskCompletionDate, notes.taskCompletionTime, notes.noteStatus, notes.noteDelegation, notes.owner,
+				user_shares.username AS shared_username
+			FROM notes
+			LEFT JOIN user_shares ON notes.id = user_shares.note_id
+			WHERE (notes.fts_text @@ plainto_tsquery('english', $1) AND (notes.owner = $2 OR notes.noteDelegation = $2))
+			OR (user_shares.username ILIKE $1)`
+
     rows, err := a.db.Query(query, searchQuery, username)
     if err != nil {
         return nil, err
@@ -227,7 +226,7 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
         var sharedUsername sql.NullString
 
         if err := rows.Scan(&note.ID, &note.Title, &note.NoteType, &note.Description, &note.NoteCreated,
-            &note.TaskCompletionDate.String, &note.TaskCompletionTime.String, &note.NoteStatus.String, &note.NoteDelegation.String, &sharedUsername); err != nil {
+            &note.TaskCompletionDate.String, &note.TaskCompletionTime.String, &note.NoteStatus.String, &note.NoteDelegation.String, &note.Owner, &sharedUsername); err != nil {
             return nil, err
         }
 

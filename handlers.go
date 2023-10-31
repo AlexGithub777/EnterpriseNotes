@@ -14,10 +14,6 @@ import (
 )
 
 func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
-	
-	
-	
-
     if os.Getenv("DISABLE_AUTH") != "1" {
         // Perform authentication checks only if the environment variable is not set
         a.isAuthenticated(w, r)
@@ -209,6 +205,21 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
         username = sess.CAttr("username").(string)
     }
 
+	// Get the list of all users
+    allUsers, err := a.getAllUsers(username)
+    if err != nil {
+        // Handle the error appropriately (e.g., log it or show an error page)
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+
+	// Retrieve all shared notes with privileges
+    sharedNotes, err := a.retrieveSharedNotesWithPrivileges(username)
+    if err != nil {
+        checkInternalServerError(err, w)
+        return
+    }
+
     searchQuery := r.FormValue("searchQuery")
 
     // Query your database using FTS to search for notes based on searchQuery
@@ -229,12 +240,19 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     // Pass the search results with shared users to the template
-    searchData := struct {
+    data := struct {
+		Username string
         SearchResults []Note
 		SearchQuery string
+		AllUsers      []User
+		SharedNotes   []Note
+		
     }{
+		Username: username,
         SearchResults: results,
 		SearchQuery: searchQuery,
+		AllUsers:      allUsers,
+		SharedNotes:   sharedNotes,
     }
 
 	var funcMap = template.FuncMap{
@@ -257,7 +275,7 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
     t, err := template.New("search_results.html").Funcs(funcMap).ParseFiles("tmpl/search_results.html")
 
 	var buf bytes.Buffer
-    err = t.Execute(&buf, searchData)
+    err = t.Execute(&buf, data)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
