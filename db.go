@@ -205,8 +205,8 @@ func (a *App) insertNoteIntoDatabase(note Note) error {
 
 func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note, error) {
     query := `
-        SELECT notes.id, notes.title, notes.notetype, notes.description, notes.notecreated,
-               notes.taskcompletiondate, notes.taskcompletiontime, notes.notestatus, notes.notedelegation,
+        SELECT notes.id, notes.title, notes.noteType, notes.description, notes.noteCreated,
+               notes.taskCompletionDate, notes.taskCompletionTime, notes.noteStatus, notes.noteDelegation,
                user_shares.username AS shared_username
         FROM notes
         LEFT JOIN user_shares ON notes.id = user_shares.note_id

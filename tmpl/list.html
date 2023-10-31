@@ -1304,19 +1304,26 @@
             // Function to handle note type change FOR EDIT MODAL
             function editHandleNoteTypeChange() {
                 var noteType = document.getElementById("editNoteType").value;
-                var completionTimeField = document.getElementById(
+                var completionTimeFieldDiv = document.getElementById(
                     "editTaskCompletionTimeDiv"
                 );
-                var completionDateField = document.getElementById(
+                var completionDateFieldDiv = document.getElementById(
                     "editTaskCompletionDateDiv"
                 );
 
+                var completionTimeField = document.getElementById(
+                    "editTaskCompletionTime"
+                );
+                var completionDateField = document.getElementById(
+                    "editTaskCompletionDate"
+                );
+
                 if (noteType === "Task") {
-                    completionTimeField.style.display = "block";
-                    completionDateField.style.display = "block";
+                    completionTimeFieldDiv.style.display = "block";
+                    completionDateFieldDiv.style.display = "block";
                 } else {
-                    completionTimeField.style.display = "none";
-                    completionDateField.style.display = "none";
+                    completionTimeFieldDiv.style.display = "none";
+                    completionDateFieldDiv.style.display = "none";
                     // Set the value to an empty string if not a task
                     completionTimeField.value = "";
                     completionDateField.value = "";
@@ -1327,19 +1334,26 @@
             function DelegatedHandleNoteTypeChange() {
                 var noteType =
                     document.getElementById("DelegatedNoteType").value;
-                var completionTimeField = document.getElementById(
+                var completionTimeFieldDiv = document.getElementById(
                     "DelegatedTaskCompletionTimeDiv"
                 );
-                var completionDateField = document.getElementById(
+                var completionDateFieldDiv = document.getElementById(
                     "DelegatedTaskCompletionDateDiv"
                 );
 
+                var completionTimeField = document.getElementById(
+                    "DelegatedTaskCompletionTime"
+                );
+                var completionDateField = document.getElementById(
+                    "DelegatedTaskCompletionDate"
+                );
+
                 if (noteType === "Task") {
-                    completionTimeField.style.display = "block";
-                    completionDateField.style.display = "block";
+                    completionTimeFieldDiv.style.display = "block";
+                    completionDateFieldDiv.style.display = "block";
                 } else {
-                    completionTimeField.style.display = "none";
-                    completionDateField.style.display = "none";
+                    completionTimeFieldDiv.style.display = "none";
+                    completionDateFieldDiv.style.display = "none";
                     // Set the value to an empty string if not a task
                     completionTimeField.value = "";
                     completionDateField.value = "";

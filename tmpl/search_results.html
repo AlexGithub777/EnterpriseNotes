@@ -60,9 +60,23 @@
                         <td>{{$note.Title}}</td>
                         <td>{{$note.NoteType}}</td>
                         <td>{{$note.Description}}</td>
-                        <td>{{$note.NoteCreated}}</td>
-                        <td>{{$note.TaskCompletionTime.String}}</td>
-                        <td>{{$note.TaskCompletionDate.String}}</td>
+                        <td>
+                            {{if $note.NoteCreated.IsZero}} N/A {{else}}
+                            {{$note.NoteCreated.Format "02/01/2006 3:04 PM"}}
+                            {{end}}
+                        </td>
+                        <td>
+                            {{if ne $note.TaskCompletionTime.String ""}}
+                            {{formatTime "15:04"
+                            $note.TaskCompletionTime.String}} {{else}} N/A
+                            {{end}}
+                        </td>
+                        <td>
+                            {{if ne $note.TaskCompletionDate.String ""}}
+                            {{formatDate "2006-01-02"
+                            $note.TaskCompletionDate.String}} {{else}} N/A
+                            {{end}}
+                        </td>
                         <td>{{$note.NoteStatus.String}}</td>
                         <td>{{$note.NoteDelegation.String}}</td>
                         <td>

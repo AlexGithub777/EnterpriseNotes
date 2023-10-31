@@ -238,18 +238,34 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
 		SearchQuery: searchQuery,
     }
 
-    // Render the search results in your template
-    t, err := template.New("search_results.html").ParseFiles("tmpl/search_results.html")
-    if err != nil {
-        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-        return
-    }
+	var funcMap = template.FuncMap{
+		"formatTime": func(layout, value string) (string, error) {
+			t, err := time.Parse(layout, value)
+			if err != nil {
+				return "", err
+			}
+			return t.Format("3:04 PM"), nil
+		},
+		"formatDate": func(layout, value string) (string, error) {
+			t, err := time.Parse(layout, value)
+			if err != nil {
+				return "", err
+			}
+			return t.Format("02/01/2006"), nil
+		},
+	}
 
-    // Pass the search results to the template
-    if err := t.Execute(w, searchData); err != nil {
-        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+    t, err := template.New("search_results.html").Funcs(funcMap).ParseFiles("tmpl/search_results.html")
+
+	var buf bytes.Buffer
+    err = t.Execute(&buf, searchData)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
+    w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+    buf.WriteTo(w)
+
 }
 
 func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
