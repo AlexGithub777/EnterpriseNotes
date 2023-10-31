@@ -83,9 +83,14 @@
                         </td>
                         <td>{{$note.NoteStatus.String}}</td>
                         <td>{{$note.NoteDelegation.String}}</td>
-                        <td>
-                            {{range $sharedUser := $note.SharedUsers}}
-                            {{$sharedUser.Username.String}}, {{end}}
+                        <td> <!-- Display the list of shared users for this note -->
+                            {{range $index, $sharedUser := $note.SharedUsers}}
+                                {{if $index}}
+                                    , {{$sharedUser.Username.String}}
+                                {{else}}
+                                    {{$sharedUser.Username.String}}
+                                {{end}}
+                            {{end}}
                         </td>
                         <td>
                             <button

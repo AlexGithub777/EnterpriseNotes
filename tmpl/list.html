@@ -135,8 +135,13 @@
                             </td>
                             <td>
                                 <!-- Display the list of shared users for this note -->
-                                {{range $sharedUser := $note.SharedUsers}}
-                                {{$sharedUser.Username.String}}, {{end}}
+                                {{range $index, $sharedUser := $note.SharedUsers}}
+                                    {{if $index}}
+                                        , {{$sharedUser.Username.String}}
+                                    {{else}}
+                                        {{$sharedUser.Username.String}}
+                                    {{end}}
+                                {{end}}
                             </td>
                             <td>
                                 <button
