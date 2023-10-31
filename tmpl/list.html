@@ -95,7 +95,13 @@
                             <td>{{$note.Title}}</td>
                             <td>{{$note.NoteType}}</td>
                             <td>{{$note.Description}}</td>
-                            <td>{{$note.NoteCreated}}</td>
+                            <td>
+                                {{if $note.NoteCreated.IsZero}}
+                                    N/A
+                                {{else}}
+                                    {{$note.NoteCreated.Format "02/01/2006 3:04 PM"}}
+                                {{end}}
+                            </td>                                                    
                             <td>
                                 {{if $note.TaskCompletionTime.Valid}}
                                     {{if ne $note.TaskCompletionTime.String ""}}
@@ -228,7 +234,13 @@
                             <td>{{$note.Title}}</td>
                             <td>{{$note.NoteType}}</td>
                             <td>{{$note.Description}}</td>
-                            <td>{{$note.NoteCreated}}</td>
+                            <td>
+                                {{if $note.NoteCreated.IsZero}}
+                                    N/A
+                                {{else}}
+                                    {{$note.NoteCreated.Format "02/01/2006 3:04 PM"}}
+                                {{end}}
+                            </td>                                                      
                             <td>
                                 {{if $note.TaskCompletionTime.Valid}}
                                     {{if ne $note.TaskCompletionTime.String ""}}
