@@ -374,11 +374,6 @@ func (a *App) updateUserPrivileges(selectedUsername, updatedPrivileges, noteID s
     return nil
 }
 
-type SearchResult struct {
-    Count       int
-    Description string
-}
-
 func (a *App) findTextInNote(noteID int, searchPattern string) ([]SearchResult, error) {
     // Fetch the note with the given ID to access the title and description
     note, err := a.getNoteByID(noteID)
@@ -408,7 +403,6 @@ func (a *App) findTextInNote(noteID int, searchPattern string) ([]SearchResult, 
 
     return results, nil
 }
-
 
 
 // countOccurrences counts the number of occurrences of a searchPattern in a text.

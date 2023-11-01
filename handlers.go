@@ -13,6 +13,8 @@ import (
 	"github.com/icza/session"
 )
 
+
+
 func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     if os.Getenv("DISABLE_AUTH") != "1" {
         // Perform authentication checks only if the environment variable is not set
@@ -196,7 +198,10 @@ func (a *App) getUnsharedUsersForNoteHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
-	a.isAuthenticated(w, r)
+	if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
 
 	sess := session.Get(r)
     username := "[guest]"
@@ -286,9 +291,18 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
-    a.isAuthenticated(w, r)
+    if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+    }
 
     sess := session.Get(r)
+    if sess == nil {
+        // Handle the case when session is not found or authenticated
+        http.Error(w, "Unauthorized", http.StatusSeeOther)
+        return
+    }
+
     username := sess.CAttr("username").(string)
 
     if r.Method != http.MethodPost {
@@ -317,7 +331,10 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
-    a.isAuthenticated(w, r)
+    if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
 
     if r.Method != http.MethodPost {
         http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -346,7 +363,10 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
-    a.isAuthenticated(w, r)
+    if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
 
     if r.Method != http.MethodPost {
         http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -367,7 +387,10 @@ func (a *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 
 
 func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
-    a.isAuthenticated(w, r)
+    if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
 
     if r.Method != http.MethodPost {
         http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -394,7 +417,10 @@ func (a *App) shareHandler(w http.ResponseWriter, r *http.Request) {
 
 
 func (a *App) removeSharedNoteHandler(w http.ResponseWriter, r *http.Request) {
-    a.isAuthenticated(w, r)
+    if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
 
     if r.Method != http.MethodPost {
         http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -416,7 +442,12 @@ func (a *App) removeSharedNoteHandler(w http.ResponseWriter, r *http.Request) {
     // Redirect the user to a success page or back to the list of shared notes
     http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
+
 func (a *App) removeDelegationHandler(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
     // Parse the request and get the note ID
     var inputData struct {
         NoteID int // You may need to adjust the data structure as per your needs
@@ -439,6 +470,10 @@ func (a *App) removeDelegationHandler(w http.ResponseWriter, r *http.Request) {
 
 
 func (a *App) updatePrivilegesHandler(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
     // Parse the POST data to retrieve the selected username and updated privileges
     r.ParseForm()
     selectedUsername := r.Form.Get("username")
@@ -458,6 +493,10 @@ func (a *App) updatePrivilegesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) findInNoteHandler(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
     vars := mux.Vars(r)
     noteIDStr, ok := vars["noteID"]
     if !ok {
@@ -500,7 +539,10 @@ func (a *App) findInNoteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
-	a.isAuthenticated(w, r)
+	if os.Getenv("DISABLE_AUTH") != "1" {
+        // Perform authentication checks only if the environment variable is not set
+        a.isAuthenticated(w, r)
+	}
 	http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
 

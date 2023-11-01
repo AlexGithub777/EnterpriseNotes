@@ -40,6 +40,11 @@ type User struct {
 	
 }
 
+type SearchResult struct {
+    Count       int
+    Description string
+}
+
 
 func readData(fileName string) ([][]string, error) {
 	f, err := os.Open(fileName)
