@@ -1,3 +1,4 @@
+// Package main contains the main entry point for the Go application
 package main
 
 import (
@@ -11,13 +12,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// UserShare represents a user's sharing permissions for a note.
 type UserShare struct {
 	NoteID int `json:"note_id"`
 	Username sql.NullString `json:"Username"`
 	Privileges sql.NullString `json:"Privileges"`
 }
 
+// Note represents a note in the application.
 type Note struct {
+	// (Field descriptions for the Note type)
 	ID                 int    `json:"id"`
 	Title              string `json:"title"`
 	NoteType           string `json:"note_type"`
@@ -33,6 +37,7 @@ type Note struct {
 	SharedUsers		   []UserShare
 }
 
+// User represents a user in the application.
 type User struct {
 	Id string
 	Username string `json:"username"`
@@ -40,12 +45,13 @@ type User struct {
 	
 }
 
+// SearchResult represents a search result in the application.
 type SearchResult struct {
     Count       int
     Description string
 }
 
-
+// readData reads data from a CSV file and returns it as a 2D string array.
 func readData(fileName string) ([][]string, error) {
 	f, err := os.Open(fileName)
 
@@ -71,6 +77,7 @@ func readData(fileName string) ([][]string, error) {
 	return records, nil
 }
 
+// importData initializes the database schema and imports data from CSV files.
 func (a *App) importData() error {
 
 	// Drop foreign key constraints if they exist
@@ -183,8 +190,6 @@ func (a *App) importData() error {
 	}*/
 
 
-
-    // Import data from CSV files
     importDataFromCSV(a, "data/notes.csv", notesStmt, importNotesData)
     /*importDataFromCSV(a, "data/user_shares.csv", userSharesStmt, importUserSharesData)*/
 
@@ -198,6 +203,7 @@ func (a *App) importData() error {
     return nil // Return nil to indicate success
 }
 
+// importDataFromCSV reads data from a CSV file and imports it into the database using the provided statement.
 func importDataFromCSV(a *App, fileName string, stmt *sql.Stmt, dataImporter func(*App, []string) error) {
     data, err := readData(fileName)
     if err != nil {
@@ -212,6 +218,7 @@ func importDataFromCSV(a *App, fileName string, stmt *sql.Stmt, dataImporter fun
     }
 }
 
+// importNotesData imports note data from a CSV row into the database.
 func importNotesData(a *App, row []string) error {
     title := row[0]
     noteType := row[1]

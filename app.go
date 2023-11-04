@@ -1,3 +1,4 @@
+// Package main contains the main entry point for the Go application
 package main
 
 import (
@@ -22,17 +23,20 @@ func (a *App) Initialize() {
     }
     a.db = db
 
+	// Import data (if applicable)
     a.importData()
 	
+	// Setup authentication (if applicable)
 	a.setupAuth()
     
+	// Initialize the application's routes
     a.initializeRoutes()
 	
 
-	// Set the bindport directly here
-    a.bindport = "8080"  // Default value
+	// Set the default bind port
+    a.bindport = "8080" 
 
-    // Check if a different bind port was passed from the CLI
+    // Check if a different bind port was passed from the CLI via the PORT environment variable
     tempport := os.Getenv("PORT")
     if tempport != "" {
         a.bindport = tempport
@@ -45,9 +49,10 @@ func (a *App) Run(addr string) {
 		a.bindport = addr
 	}
 
-	// get the local IP that has Internet connectivity
+	// Get the local IP that has Internet connectivity
 	ip := GetOutboundIP()
 
+	// Log the server's starting message
 	log.Printf("Starting HTTP service on http://%s:%s", ip, a.bindport)
 	// setup HTTP on gorilla mux for a gracefull shutdown
 	srv := &http.Server{
@@ -74,6 +79,8 @@ func (a *App) Run(addr string) {
 	<-c
 	ctx, cancel := context.WithTimeout(context.Background(), wait)
 	defer cancel()
+
+	// Log the shutdown process
 	log.Println("shutting HTTP service down")
 	srv.Shutdown(ctx)
 	log.Println("closing database connections")

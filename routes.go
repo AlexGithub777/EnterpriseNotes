@@ -1,3 +1,4 @@
+// Package main contains the main entry point for the Go application
 package main
 
 import (
