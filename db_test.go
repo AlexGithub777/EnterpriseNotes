@@ -55,7 +55,7 @@ func TestRetrieveNotes_Success(t *testing.T) {
     )
 
     // Expect the query with a specific username
-    mock.ExpectQuery("SELECT .* FROM notes n .*").
+    mock.ExpectPrepare("SELECT .* FROM notes n .*").ExpectQuery().
         WithArgs("user1").
         WillReturnRows(rows)
 
@@ -154,7 +154,7 @@ func TestRetrieveSharedNotesWithPrivileges_Success(t *testing.T) {
     )
 
     // Expect the query with a specific username
-    mock.ExpectQuery("SELECT n.*, us.privileges FROM notes n INNER JOIN user_shares us .*").
+    mock.ExpectPrepare("SELECT n.*, us.privileges FROM notes n INNER JOIN user_shares us .*").ExpectQuery().
         WithArgs("user1").
         WillReturnRows(rows)
 
@@ -225,7 +225,7 @@ func TestGetAllUsers_Success(t *testing.T) {
         AddRow("user3")
 
     // Expect the query with a specific ownerUsername
-    mock.ExpectQuery("SELECT username FROM users WHERE username != ?").
+    mock.ExpectPrepare("SELECT username FROM users WHERE username != ?").ExpectQuery().
         WithArgs("owner").
         WillReturnRows(rows)
 
@@ -313,7 +313,7 @@ func TestRemoveSharedNoteFromUser(t *testing.T) {
 
     // Define the expected SQL query and result using sqlmock
     expectedQuery := "DELETE FROM user_shares"
-    mock.ExpectExec(expectedQuery).
+    mock.ExpectPrepare(expectedQuery).ExpectExec().
         WithArgs(username, noteID).
         WillReturnResult(sqlmock.NewResult(0, 1)) // 1 row affected
 
@@ -344,7 +344,7 @@ func TestRemoveDelegation(t *testing.T) {
 
     // Define the expected SQL query and result using sqlmock
     expectedQuery := "UPDATE notes SET noteDelegation = NULL WHERE id = ?"
-    mock.ExpectExec(expectedQuery).
+    mock.ExpectPrepare(expectedQuery).ExpectExec().
         WithArgs(noteID).
         WillReturnResult(sqlmock.NewResult(0, 1)) // 1 row affected
 
@@ -376,7 +376,7 @@ func TestGetUnsharedUsersForNote(t *testing.T) {
 
     // Define the expected SQL query and result using sqlmock
     expectedQuery := "SELECT username FROM users"
-    mock.ExpectQuery(expectedQuery).
+    mock.ExpectPrepare(expectedQuery).ExpectQuery().
         WithArgs(noteID, username).
         WillReturnRows(sqlmock.NewRows([]string{"username"}).
             AddRow("user1").
@@ -418,7 +418,7 @@ func TestDeleteNoteFromDatabase(t *testing.T) {
 
     // Define the expected SQL query and result using sqlmock
     expectedQuery := "DELETE FROM notes"
-    mock.ExpectExec(expectedQuery).
+    mock.ExpectPrepare(expectedQuery).ExpectExec().
         WithArgs(noteID).
         WillReturnResult(sqlmock.NewResult(0, 1)) // 1 row affected
 
@@ -451,7 +451,7 @@ func TestUpdateUserPrivileges(t *testing.T) {
 
     // Define the expected SQL query and result using sqlmock
     expectedQuery := "UPDATE user_shares SET privileges"
-    mock.ExpectExec(expectedQuery).
+    mock.ExpectPrepare(expectedQuery).ExpectExec().
         WithArgs(updatedPrivileges, selectedUsername, noteID).
         WillReturnResult(sqlmock.NewResult(0, 1)) // 1 row affected
 

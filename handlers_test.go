@@ -71,7 +71,7 @@ func TestGetSharedUsersForNote_Success(t *testing.T) {
         AddRow("user2", "viewer")
 
     // Expect the query with a specific noteID
-    mock.ExpectQuery("SELECT username, privileges FROM user_shares WHERE note_id = ?").
+    mock.ExpectPrepare("SELECT username, privileges FROM user_shares WHERE note_id = ?").ExpectQuery().
         WithArgs(123).WillReturnRows(rows)
 
     // Call the function with the noteID
@@ -126,7 +126,7 @@ func TestGetUnsharedUsersForNoteHandler(t *testing.T) {
         AddRow("user1").
         AddRow("user2")
 
-    mock.ExpectQuery("SELECT username").
+    mock.ExpectPrepare("SELECT username").ExpectQuery().
         WithArgs(123, "testuser").
         WillReturnRows(rows)
 
