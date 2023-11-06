@@ -347,7 +347,7 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
         
         http.SetCookie(w, &http.Cookie{
             Name:  "errorMessage",
-            Value: "Note title or description exceds 256 characters.", // Set your error message
+            Value: "Note title or description exceeds 256 characters.", // Set your error message
             Path:  "/list", // Set the path as needed
         })
         http.Redirect(w, r, "/list", http.StatusSeeOther)
