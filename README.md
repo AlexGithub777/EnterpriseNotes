@@ -20,27 +20,27 @@ This application uses the Go programming language - where the latest was [Go 1.2
 
 ### Database configuration
 
-The app assumes a database exists - ESD. Edit the _app.go_ to change the default database name. Database defaults in the _app.go_ are shown below.
+The app assumes a database exists - ESD. Edit the _dbsetup.go_ to change the default database name. Database defaults in the _dbsetup.go_ are shown below.
 
 ```go
 const (
 	host     = "localhost"
 	port     = 5432
 	user     = "postgres"
-	password = "postgres"
-	dbname   = "ESD"
+	password = ""
+	dbname   = "postgres"
 )
 ```
 
 To run the server on your Windows system:
 
-1. Run `buildpkg.cmd` in the root of the repo to build the binary (`pwrcost.exe`) using non vendored packages
-1. Run `buildvendor.cmd` in the root of the repo to build the binary (`pwrcost.exe`) with the vendor
-1. Run the binary `pwrcost.exe` or used the run.cmd (has env variable set)
-1. Browse to [http://localhost:8080](http://localhost:8080) to test the application out. If port 80 does not work, you can start the app as follows.
+1. Run `buildpkg.cmd` in the root of the repo to build the binary (`notes.exe`) using non vendored packages
+1. Run `buildvendor.cmd` in the root of the repo to build the binary (`notes.exe`) with the vendor
+1. Run the binary `notes.exe` or used the run.cmd (has env variable set)
+1. Browse to [http://192.168.1.102:8080](http://192.168.1.102:8080) to test the application out. If port 8080 does not work, you can start the app as follows using your console, where \*\*\*\* is your chosen port number.
 
-    ```sh
-        > pwrcost 8080
+    ```
+        > ./notes.exe ****
     ```
 
 ### Non Windows
