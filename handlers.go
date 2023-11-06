@@ -28,6 +28,18 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         username = sess.CAttr("username").(string)
     }
 
+    // Check for a message cookie
+    cookie, err := r.Cookie("errorMessage")
+    var message string
+    if err == nil {
+        message = cookie.Value
+
+        // Delete the cookie
+        deleteCookie := http.Cookie{Name: "errorMessage", MaxAge: -1, Path: "/list"}
+        http.SetCookie(w, &deleteCookie)
+    }
+
+
     if r.Method != http.MethodGet {
         http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
         return
@@ -71,11 +83,15 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         Notes         []Note
         AllUsers      []User
         SharedNotes   []Note
+        Message string
+        
     }{
         Username:      username,
         Notes:         notes,
         AllUsers:      allUsers,
         SharedNotes:   sharedNotes,
+        Message: message,
+        
     }
 
     t, err := template.New("list.html").Funcs(template.FuncMap{
@@ -251,6 +267,7 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
 		SearchQuery string
 		AllUsers      []User
 		SharedNotes   []Note
+        
 		
     }{
 		Username: username,
@@ -258,6 +275,7 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
 		SearchQuery: searchQuery,
 		AllUsers:      allUsers,
 		SharedNotes:   sharedNotes,
+        
     }
 
 	var funcMap = template.FuncMap{
@@ -310,6 +328,9 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    const MaxNoteLength = 256
+
+
     var note Note
     note.Title = r.FormValue("Title")
     note.NoteType = r.FormValue("NoteType")
@@ -319,6 +340,19 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
     note.TaskCompletionTime.String = r.FormValue("TaskCompletionTime")
     note.NoteStatus.String = r.FormValue("NoteStatus")
     note.NoteDelegation.String = r.FormValue("NoteDelegation")
+
+    // Validate the length of title and description
+    if len(note.Title) > MaxNoteLength || len(note.Description) > MaxNoteLength {
+        
+        
+        http.SetCookie(w, &http.Cookie{
+            Name:  "errorMessage",
+            Value: "Note title or description exceds 256 characters.", // Set your error message
+            Path:  "/list", // Set the path as needed
+        })
+        http.Redirect(w, r, "/list", http.StatusSeeOther)
+        return
+    }
 
     // Insert the new note into the database
     err := a.insertNoteIntoDatabase(note)
