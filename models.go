@@ -176,7 +176,7 @@ func (a *App) importData() error {
     }
 
     // Prepare the notes insert query
-    notesStmt, err := a.db.Prepare("INSERT INTO notes (title, noteType, description, owner) VALUES($1,$2,$3,$4)")
+    notesStmt, err := a.db.Prepare("INSERT INTO notes (title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner, fts_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8, to_tsvector('english', $9))")
     if err != nil {
         log.Fatal(err)
     }
