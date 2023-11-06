@@ -7,24 +7,29 @@ import (
 )
 
 func (a *App) retrieveNotes(username string) ([]Note, error) {
-	// Query to fetch notes and shared users' data
+	// Prepare the SQL statement for fetching notes and shared users' data
 	query := `
-    SELECT
-    n.*, u.username, us.privileges
-    FROM
-        notes n
-    LEFT JOIN
-        user_shares us ON n.id = us.note_id
-    LEFT JOIN
-        users u ON us.username = u.username
-    WHERE
-        n.owner = $1 OR n.noteDelegation = $1
-    ORDER BY
-    n.id
+		SELECT
+		n.*, u.username, us.privileges
+		FROM
+			notes n
+		LEFT JOIN
+			user_shares us ON n.id = us.note_id
+		LEFT JOIN
+			users u ON us.username = u.username
+		WHERE
+			n.owner = $1 OR n.noteDelegation = $1
+		ORDER BY
+		n.id
+	`
 
-    `
+	stmt, err := a.db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
 
-	rows, err := a.db.Query(query, username)
+	rows, err := stmt.Query(username)
 	if err != nil {
 		return nil, err
 	}
@@ -62,81 +67,103 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
 	return notes, nil
 }
 
+
 func (a *App) retrieveSharedNotesWithPrivileges(username string) ([]Note, error) {
-    rows, err := a.db.Query(`
-        SELECT n.*, us.privileges
-        FROM notes n
-        INNER JOIN user_shares us ON n.id = us.note_id
-        WHERE us.username = $1
-        ORDER BY n.id
-    `, username)
-    if err != nil {
-        return nil, err
-    }
+	// Prepare the SQL statement for fetching shared notes with privileges
+	query := `
+		SELECT n.*, us.privileges
+		FROM notes n
+		INNER JOIN user_shares us ON n.id = us.note_id
+		WHERE us.username = $1
+		ORDER BY n.id
+	`
 
-    var sharedNotes []Note
-    for rows.Next() {
-        var sharedNote Note
-		
-        
-        err := rows.Scan(
-            &sharedNote.ID,
-            &sharedNote.Title,
-            &sharedNote.NoteType,
-            &sharedNote.Description,
-            &sharedNote.NoteCreated,
-            &sharedNote.TaskCompletionTime,
-            &sharedNote.TaskCompletionDate,
-            &sharedNote.NoteStatus,
-            &sharedNote.NoteDelegation,
-            &sharedNote.Owner,
-            &sharedNote.FTSText,
-            &sharedNote.Privileges, // Retrieve the 'privileges' field
-        )
-        if err != nil {
-            return nil, err
-        }
-        
-        // Set the 'Privileges' field in the Note struct
-        
+	stmt, err := a.db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
 
-        sharedNotes = append(sharedNotes, sharedNote)
-    }
+	rows, err := stmt.Query(username)
+	if err != nil {
+		return nil, err
+	}
 
-    return sharedNotes, nil
+	var sharedNotes []Note
+	for rows.Next() {
+		var sharedNote Note
+
+		err := rows.Scan(
+			&sharedNote.ID,
+			&sharedNote.Title,
+			&sharedNote.NoteType,
+			&sharedNote.Description,
+			&sharedNote.NoteCreated,
+			&sharedNote.TaskCompletionTime,
+			&sharedNote.TaskCompletionDate,
+			&sharedNote.NoteStatus,
+			&sharedNote.NoteDelegation,
+			&sharedNote.Owner,
+			&sharedNote.FTSText,
+			&sharedNote.Privileges, // Retrieve the 'privileges' field
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		sharedNotes = append(sharedNotes, sharedNote)
+	}
+
+	return sharedNotes, nil
 }
-
 
 func (a *App) getAllUsers(ownerUsername string) ([]User, error) {
-    var users []User
+	// Prepare the SQL statement for fetching all users except the owner
+	query := "SELECT username FROM users WHERE username != $1"
 
-    rows, err := a.db.Query("SELECT username FROM users WHERE username != $1", ownerUsername)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+	stmt, err := a.db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
 
-    for rows.Next() {
-        var user User
-        if err := rows.Scan(&user.Username); err != nil {
-            return nil, err
-        }
-        users = append(users, user)
-    }
+	rows, err := stmt.Query(ownerUsername)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    if err := rows.Err(); err != nil {
-        return nil, err
-    }
+	var users []User
+	for rows.Next() {
+		var user User
+		if err := rows.Scan(&user.Username); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
 
-    return users, nil
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
+
 
 func (a *App) getSharedUsersForNote(noteID int) ([]UserShare, error) {
     // Initialize a slice to store the shared users
     var sharedUsers []UserShare
 
-    // Perform a database query to fetch shared users and their privileges for the given noteID
-    rows, err := a.db.Query("SELECT username, privileges FROM user_shares WHERE note_id = $1", noteID)
+    // Prepare the SQL statement for fetching shared users and their privileges for the given noteID
+    query := "SELECT username, privileges FROM user_shares WHERE note_id = $1"
+
+    stmt, err := a.db.Prepare(query)
+    if err != nil {
+        return nil, err
+    }
+    defer stmt.Close()
+
+    rows, err := stmt.Query(noteID)
     if err != nil {
         return nil, err
     }
@@ -145,6 +172,7 @@ func (a *App) getSharedUsersForNote(noteID int) ([]UserShare, error) {
     for rows.Next() {
         var username sql.NullString
         var privileges sql.NullString
+
         // Populate the username and privileges from the database result
         if err := rows.Scan(&username, &privileges); err != nil {
             return nil, err
@@ -152,7 +180,7 @@ func (a *App) getSharedUsersForNote(noteID int) ([]UserShare, error) {
 
         // Create a UserShare struct with the username and privileges
         user := UserShare{
-            Username: username,
+            Username:   username,
             Privileges: privileges,
             // Add other user fields if needed
         }
@@ -168,51 +196,108 @@ func (a *App) getSharedUsersForNote(noteID int) ([]UserShare, error) {
     return sharedUsers, nil
 }
 
+
 func (a *App) updateNoteInDatabase(note Note) error {
-    _, err := a.db.Exec(`
-        UPDATE notes SET title=$1, noteType=$2, description=$3,
-        taskcompletiontime=$4, taskcompletiondate=$5, notestatus=$6, notedelegation=$7
-        WHERE id=$8
-    `, note.Title, note.NoteType, note.Description, note.TaskCompletionTime.String,
-        note.TaskCompletionDate.String, note.NoteStatus.String, note.NoteDelegation.String, note.ID)
+	// Prepare the SQL statement for updating note fields
+	updateQuery := `
+        UPDATE notes
+        SET title = $1, noteType = $2, description = $3,
+        taskcompletiontime = $4, taskcompletiondate = $5, notestatus = $6, notedelegation = $7
+        WHERE id = $8
+    `
 
-    if err != nil {
-        return err
-    }
+	updateStmt, err := a.db.Prepare(updateQuery)
+	if err != nil {
+		return err
+	}
+	defer updateStmt.Close()
 
-    // Recalculate the fts_text field
-    _, err = a.db.Exec(`
-        UPDATE notes SET fts_text = to_tsvector('english', title || ' ' || noteType || ' ' || description || ' ' || taskcompletiontime || ' ' || taskcompletiondate || ' ' || notestatus || ' ' || notedelegation)
+	_, err = updateStmt.Exec(
+		note.Title,
+		note.NoteType,
+		note.Description,
+		note.TaskCompletionTime.String,
+		note.TaskCompletionDate.String,
+		note.NoteStatus.String,
+		note.NoteDelegation.String,
+		note.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Prepare the SQL statement for recalculating the fts_text field
+	recalculateQuery := `
+        UPDATE notes
+        SET fts_text = to_tsvector('english', title || ' ' || noteType || ' ' || description || ' ' || taskcompletiontime || ' ' || taskcompletiondate || ' ' || notestatus || ' ' || notedelegation)
         WHERE id = $1
-    `, note.ID)
-    if err != nil {
-        return err
-    }
+    `
 
-    return nil
+	recalculateStmt, err := a.db.Prepare(recalculateQuery)
+	if err != nil {
+		return err
+	}
+	defer recalculateStmt.Close()
+
+	_, err = recalculateStmt.Exec(note.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
+
 
 func (a *App) insertNoteIntoDatabase(note Note) error {
-    _, err := a.db.Exec(`
+	// Prepare the SQL statement for inserting a new note
+	insertQuery := `
         INSERT INTO notes (title, noteType, description, TaskCompletionDate, TaskCompletionTime, NoteStatus, NoteDelegation, owner, fts_text)
         VALUES($1, $2, $3, $4, $5, $6, $7, $8, to_tsvector('english', $1 || ' ' || $2 || ' ' || $3 || ' ' || $4 || ' ' || $5 || ' ' || $6 || ' ' || $7 || ' ' || $8))
-    `, note.Title, note.NoteType, note.Description, note.TaskCompletionDate.String, note.TaskCompletionTime.String, note.NoteStatus.String, note.NoteDelegation.String, note.Owner)
+    `
 
-    return err
+	insertStmt, err := a.db.Prepare(insertQuery)
+	if err != nil {
+		return err
+	}
+	defer insertStmt.Close()
+
+	_, err = insertStmt.Exec(
+		note.Title,
+		note.NoteType,
+		note.Description,
+		note.TaskCompletionDate.String,
+		note.TaskCompletionTime.String,
+		note.NoteStatus.String,
+		note.NoteDelegation.String,
+		note.Owner,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
-
 
 
 func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note, error) {
-    query := `SELECT notes.id, notes.title, notes.noteType, notes.description, notes.noteCreated,
-				notes.taskCompletionDate, notes.taskCompletionTime, notes.noteStatus, notes.noteDelegation, notes.owner,
-				user_shares.username AS shared_username
-			FROM notes
-			LEFT JOIN user_shares ON notes.id = user_shares.note_id
-			WHERE (notes.fts_text @@ plainto_tsquery('english', $1) AND (notes.owner = $2 OR notes.noteDelegation = $2))
-			OR (user_shares.username ILIKE $1)`
+    // Prepare the SQL statement for searching notes
+    query := `
+        SELECT notes.id, notes.title, notes.noteType, notes.description, notes.noteCreated,
+               notes.taskCompletionDate, notes.taskCompletionTime, notes.noteStatus, notes.noteDelegation, notes.owner,
+               user_shares.username AS shared_username
+        FROM notes
+        LEFT JOIN user_shares ON notes.id = user_shares.note_id
+        WHERE (notes.fts_text @@ plainto_tsquery('english', $1) AND (notes.owner = $2 OR notes.noteDelegation = $2))
+        OR (user_shares.username ILIKE $1)
+    `
 
-    rows, err := a.db.Query(query, searchQuery, username)
+    stmt, err := a.db.Prepare(query)
+    if err != nil {
+        return nil, err
+    }
+    defer stmt.Close()
+
+    rows, err := stmt.Query(searchQuery, username)
     if err != nil {
         return nil, err
     }
@@ -255,68 +340,109 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
     return notes, nil
 }
 
-// RemoveDelegation removes delegation for a note with the given noteID.
 func (a *App) RemoveDelegation(noteID int) error {
-    // Use a SQL statement to set the noteDelegation to NULL for the specified noteID
-    query := "UPDATE notes SET noteDelegation = NULL WHERE id = $1"
-    _, err := a.db.Exec(query, noteID)
+	// Prepare the SQL statement for removing delegation
+	query := "UPDATE notes SET noteDelegation = NULL WHERE id = $1"
 
+	stmt, err := a.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(noteID)
+	if err != nil {
+		return fmt.Errorf("Failed to remove delegation: %v", err)
+	}
+
+	return nil
+}
+
+
+func (a *App) getUnsharedUsersForNote(noteID int, username string) ([]User, error) {
+	// Initialize a slice to store unshared users
+	var unsharedUsers []User
+
+	// Prepare the SQL statement for fetching unshared users
+	query := `
+        SELECT username FROM users
+        WHERE username NOT IN (SELECT username FROM user_shares WHERE note_id = $1) AND username != $2
+    `
+
+	stmt, err := a.db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(noteID, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var username string
+		// Populate the username from the database result
+		if err := rows.Scan(&username); err != nil {
+			return nil, err
+		}
+
+		// Create a User struct with the username
+		user := User{
+			Username: username,
+			// Add other user fields if needed
+		}
+
+		// Append the user to the unsharedUsers slice
+		unsharedUsers = append(unsharedUsers, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return unsharedUsers, nil
+}
+
+
+func (a *App) deleteNoteFromDatabase(noteID int) error {
+    // Prepare the SQL statement for deleting a note by ID
+    query := "DELETE FROM notes WHERE id = $1"
+    
+    stmt, err := a.db.Prepare(query)
     if err != nil {
-        return fmt.Errorf("Failed to remove delegation: %v", err)
+        return err
+    }
+    defer stmt.Close()
+
+    _, err = stmt.Exec(noteID)
+    if err != nil {
+        return err
     }
 
     return nil
 }
 
-
-
-func (a *App) getUnsharedUsersForNote(noteID int, username string) ([]User, error) {
-    // Initialize a slice to store unshared users
-    var unsharedUsers []User
-
-    
-
-    // Perform a database query to fetch users who have not been shared with the note
-    // and are not the current user
-    rows, err := a.db.Query("SELECT username FROM users WHERE username NOT IN (SELECT username FROM user_shares WHERE note_id = $1) AND username != $2", noteID, username)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
-
-    for rows.Next() {
-        var username string
-        // Populate the username from the database result
-        if err := rows.Scan(&username); err != nil {
-            return nil, err
-        }
-
-        // Create a User struct with the username
-        user := User{
-            Username: username,
-            // Add other user fields if needed
-        }
-
-        // Append the user to the unsharedUsers slice
-        unsharedUsers = append(unsharedUsers, user)
-    }
-
-    if err := rows.Err(); err != nil {
-        return nil, err
-    }
-
-    return unsharedUsers, nil
-}
-
-func (a *App) deleteNoteFromDatabase(noteID int) error {
-    _, err := a.db.Exec("DELETE FROM notes WHERE id=$1", noteID)
-    return err
-}
-
 func (a *App) shareNoteWithUser(noteID int, sharedUsername string, privileges string) error {
-    // Check if the shared user exists in the users table by username
+    // Prepare the SQL statement for checking if the shared user exists
+    checkUserQuery := "SELECT username FROM users WHERE username = $1"
+
+    // Prepare the SQL statement for checking if the note exists
+    checkNoteQuery := "SELECT EXISTS(SELECT 1 FROM notes WHERE id = $1)"
+
+    // Prepare the SQL statement for checking if there is an existing entry for the note and shared user
+    checkExistingShareQuery := "SELECT note_id FROM user_shares WHERE note_id = $1 AND username = $2"
+
+    // Prepare the SQL statement for inserting the user share
+    insertUserShareQuery := `
+        INSERT INTO user_shares (note_id, username, privileges)
+        VALUES ($1, $2, $3)
+    `
+
+    // Check if the shared user exists
     var sharedUserID string
-    err := a.db.QueryRow("SELECT username FROM users WHERE username = $1", sharedUsername).Scan(&sharedUserID)
+    err := a.db.QueryRow(checkUserQuery, sharedUsername).Scan(&sharedUserID)
     if err != nil {
         // Handle the case where the shared user does not exist
         return err
@@ -324,7 +450,7 @@ func (a *App) shareNoteWithUser(noteID int, sharedUsername string, privileges st
 
     // Check if the note with the given ID exists
     var noteExists bool
-    err = a.db.QueryRow("SELECT EXISTS(SELECT 1 FROM notes WHERE id = $1)", noteID).Scan(&noteExists)
+    err = a.db.QueryRow(checkNoteQuery, noteID).Scan(&noteExists)
     if err != nil {
         return err
     }
@@ -335,7 +461,7 @@ func (a *App) shareNoteWithUser(noteID int, sharedUsername string, privileges st
 
     // Check if there is already an existing entry for the given note and shared user
     var existingShareID int
-    err = a.db.QueryRow("SELECT note_id FROM user_shares WHERE note_id = $1 AND username = $2", noteID, sharedUsername).Scan(&existingShareID)
+    err = a.db.QueryRow(checkExistingShareQuery, noteID, sharedUsername).Scan(&existingShareID)
     if err == nil {
         return fmt.Errorf("Note is already shared with this user")
     } else if err != sql.ErrNoRows {
@@ -343,18 +469,21 @@ func (a *App) shareNoteWithUser(noteID int, sharedUsername string, privileges st
     }
 
     // If no existing entry was found, proceed with sharing the note
-    _, err = a.db.Exec(`
-        INSERT INTO user_shares (note_id, username, privileges)
-        VALUES ($1, $2, $3)
-    `, noteID, sharedUsername, privileges)
+    _, err = a.db.Exec(insertUserShareQuery, noteID, sharedUsername, privileges)
     return err
 }
 
 func (a *App) removeSharedNoteFromUser(username string, noteID string) error {
-    _, err := a.db.Exec(`
-        DELETE FROM user_shares
-        WHERE username = $1 AND note_id = $2
-    `, username, noteID)
+    // Prepare the SQL statement for removing the shared note from a user
+    query := "DELETE FROM user_shares WHERE username = $1 AND note_id = $2"
+
+    stmt, err := a.db.Prepare(query)
+    if err != nil {
+        return err
+    }
+    defer stmt.Close()
+
+    _, err = stmt.Exec(username, noteID)
     if err != nil {
         return err
     }
@@ -363,16 +492,23 @@ func (a *App) removeSharedNoteFromUser(username string, noteID string) error {
 }
 
 func (a *App) updateUserPrivileges(selectedUsername, updatedPrivileges, noteID string) error {
-    // Prepare the SQL statement to update privileges for the selected user and noteID
+    // Prepare the SQL statement for updating user privileges
     query := "UPDATE user_shares SET privileges = $1 WHERE username = $2 AND note_id = $3"
 
-    _, err := a.db.Exec(query, updatedPrivileges, selectedUsername, noteID)
+    stmt, err := a.db.Prepare(query)
+    if err != nil {
+        return err
+    }
+    defer stmt.Close()
+
+    _, err = stmt.Exec(updatedPrivileges, selectedUsername, noteID)
     if err != nil {
         return err
     }
 
     return nil
 }
+
 
 func (a *App) findTextInNote(noteID int, searchPattern string) ([]SearchResult, error) {
     // Fetch the note with the given ID to access the title and description
@@ -415,14 +551,16 @@ func countOccurrences(text, searchPattern string) int {
 
 
 func (a *App) getNoteByID(noteID int) (*Note, error) {
-    // Query the database to retrieve the note.
+    query := "SELECT id, title, description, noteType, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner FROM notes WHERE id = $1"
+    row := a.db.QueryRow(query, noteID)
+
     var note Note
-    err := a.db.QueryRow("SELECT id, title, description, noteType, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner FROM notes WHERE id = $1", noteID).Scan(&note.ID, &note.Title, &note.Description, &note.NoteType, &note.TaskCompletionTime, &note.TaskCompletionDate, &note.NoteStatus, &note.NoteDelegation, &note.Owner)
+    err := row.Scan(&note.ID, &note.Title, &note.Description, &note.NoteType, &note.TaskCompletionTime, &note.TaskCompletionDate, &note.NoteStatus, &note.NoteDelegation, &note.Owner)
     if err != nil {
         return nil, err
     }
 
-    // Return the retrieved note.
     return &note, nil
 }
+
 
