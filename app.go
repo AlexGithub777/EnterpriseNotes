@@ -23,8 +23,13 @@ func (a *App) Initialize() {
     }
     a.db = db
 
-	// Import data (if applicable)
-    a.importData()
+	
+	//check data import status
+	_, err = os.Stat("./imported")
+	if os.IsNotExist(err) {
+		log.Println("--- Importing demo data")
+		a.importData()
+	}
 	
 	// Setup authentication (if applicable)
 	a.setupAuth()

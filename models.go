@@ -138,9 +138,9 @@ func (a *App) importData() error {
     );
 
     CREATE TABLE IF NOT EXISTS "user_shares" (
-        note_id INTEGER,
-        username TEXT,
-        privileges TEXT,
+        note_id INTEGER NOT NULL,
+        username TEXT NOT NULL,
+        privileges TEXT NOT NULL,
         PRIMARY KEY (username, note_id),
         FOREIGN KEY (note_id) REFERENCES notes (id) ON UPDATE CASCADE ON DELETE CASCADE,
         FOREIGN KEY (username) REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE
