@@ -280,7 +280,13 @@ func (a *App) insertNoteIntoDatabase(note Note) error {
 
 
 func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note, error) {
-    // Prepare the SQL statement for searching notes
+    // Attempted to validate search query, would alter search results so didn't keep
+	/*if !isValidSearchQuery(searchQuery) {
+        fmt.Printf("Invalid search query")
+        return []Note{}, nil
+    }*/
+	
+	// Prepare the SQL statement for searching notes
     query := `
         SELECT notes.id, notes.title, notes.noteType, notes.description, notes.noteCreated,
                notes.taskCompletionDate, notes.taskCompletionTime, notes.noteStatus, notes.noteDelegation, notes.owner,
@@ -339,6 +345,25 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
 
     return notes, nil
 }
+
+// Attempted to validate search query, would alter search results so didn't keep
+/*
+func isValidSearchQuery(textPattern string) bool {
+    // Define regular expressions for the valid patterns
+    sentencePattern := `^.*\bprefix\b.*\bsuffix\b.*$`
+    phoneNumberPattern := `^\d{3}-\d{7}$`
+    partialEmailPattern := `^[a-zA-Z0-9._%+-]+@.*$`
+    keywordsPattern := `(?i)\b(meeting|minutes|agenda|action|attendees|apologies)\b`
+    allCapsWordPattern := `^[A-Z]{3,}.*$`
+
+    // Check if the searchQuery matches any of the valid patterns
+    return regexp.MustCompile(sentencePattern).MatchString(textPattern) ||
+        regexp.MustCompile(phoneNumberPattern).MatchString(textPattern) ||
+        regexp.MustCompile(partialEmailPattern).MatchString(textPattern) ||
+        regexp.MustCompile(keywordsPattern).MatchString(textPattern) ||
+        regexp.MustCompile(allCapsWordPattern).MatchString(textPattern)
+}
+*/
 
 func (a *App) RemoveDelegation(noteID int) error {
 	// Prepare the SQL statement for removing delegation
