@@ -543,8 +543,6 @@ func (a *App) findTextInNote(noteID int, searchPattern string) ([]SearchResult, 
 
 // countOccurrences counts the number of occurrences of a searchPattern in a text.
 func countOccurrences(text, searchPattern string) int {
-    // Implement your logic to count occurrences. You can use strings.Count or regular expressions.
-    // Here's a simple example using strings.Count:
     count := strings.Count(strings.ToLower(text), strings.ToLower(searchPattern))
     return count
 }

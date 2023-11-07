@@ -21,9 +21,10 @@
         </style>
     </head>
     <body>
-      <!-- Add this block of code at the top of your list.html template -->
       {{if .Message }}
+      <!-- If there is a message to display -->
       <div class="w3-container w3-red">
+          <!-- Display the message in a red-colored container -->
           <p>{{.Message}}</p>
       </div>
       {{end}}
@@ -61,7 +62,6 @@
                         </div>
                     </div>
                 </header>
-                <!-- Add this code before your table -->
                 <h3>Search Notes</h3>
                 <form class="w3-container" action="/search" method="post">
                     <input
@@ -79,7 +79,6 @@
                     <thead>
                         <tr>
                             <th>Owner</th>
-                            <!-- New header for owner -->
                             <th>Title</th>
                             <th>Type</th>
                             <th>Description</th>
@@ -89,7 +88,6 @@
                             <th>Status</th>
                             <th>Delegation</th>
                             <th>Shared Users</th>
-                            <!-- New header for shared users -->
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -97,7 +95,6 @@
                         {{range $index, $note := .Notes}}
                         <tr>
                             <td>{{$note.Owner}}</td>
-                            <!-- Display the owner -->
                             <td>{{$note.Title}}</td>
                             <td>{{$note.NoteType}}</td>
                             <td>{{$note.Description}}</td>
@@ -277,17 +274,14 @@
                             <td>
                                 {{if $note.NoteStatus.Valid}}
                                 {{$note.NoteStatus.String}} {{else}} N/A
-                                <!-- or any other placeholder value you prefer -->
                                 {{end}}
                             </td>
                             <td>
                                 {{if $note.NoteDelegation.Valid}}
                                 {{$note.NoteDelegation.String}} {{else}} N/A
-                                <!-- or any other placeholder value you prefer -->
                                 {{end}}
                             </td>
                             <td>{{$note.Owner}}</td>
-                            <!-- Display the owner information -->
                             <td>
                                 {{if eq $note.Privileges "editor"}}
                                 <button
@@ -327,7 +321,6 @@
                     class="w3-modal-content w3-card-8 w3-animate-zoom"
                     style="max-width: 600px"
                 >
-                    <!-- head -->
                     <div class="w3-container w3-teal">
                         <h2>Create a New Task</h2>
                         <span
@@ -341,11 +334,13 @@
                         <div class="w3-row-padding">
                             <div class="w3-half">
                                 <label class="w3-label">Title</label>
+                                <!--Length also validated on backend, input element breaks when excessive characters are inserted -->
                                 <input
                                     class="w3-input"
                                     type="text"
                                     name="Title"
                                     id="Title"
+                                    maxlength="60"
                                     required
                                 />
                             </div>
@@ -450,7 +445,6 @@
                     class="w3-modal-content w3-card-8 w3-animate-zoom"
                     style="max-width: 600px"
                 >
-                    <!-- head -->
                     <div class="w3-container w3-teal">
                         <h2>Edit Task</h2>
                         <span
@@ -467,11 +461,13 @@
                         <div class="w3-row-padding">
                             <div class="w3-half">
                                 <label class="w3-label">Title</label>
+                                <!--Length also validated on backend, input element breaks when excessive characters are inserted -->
                                 <input
                                     class="w3-input"
                                     type="text"
                                     id="editTitle"
                                     name="Title"
+                                    maxlength="60"
                                     required
                                 />
                             </div>
@@ -603,11 +599,13 @@
 
                         <div class="w3-row-padding">
                             <label class="w3-label">Title</label>
+                            <!--Length also validated on backend, input element breaks when excessive characters are inserted -->
                             <input
                                 class="w3-input"
                                 type="text"
                                 id="DelegatedTitle"
                                 name="Title"
+                                maxlength="60"
                                 required
                             />
                         </div>
@@ -673,7 +671,6 @@
                     class="w3-modal-content w3-card-8 w3-animate-zoom"
                     style="max-width: 600px"
                 >
-                    <!-- head -->
                     <div class="w3-container w3-teal">
                         <h2>Are you sure?</h2>
                         <span
@@ -711,7 +708,6 @@
                 class="w3-modal-content w3-card-8 w3-animate-zoom"
                 style="max-width: 600px"
             >
-                <!-- Head -->
                 <div class="w3-container w3-teal">
                     <h2>Share</h2>
                     <span
@@ -789,7 +785,6 @@
                     class="w3-modal-content w3-card-8 w3-animate-zoom"
                     style="max-width: 600px"
                 >
-                    <!-- head -->
                     <div class="w3-container w3-teal">
                         <h2>Are you sure?</h2>
                         <span
@@ -880,7 +875,6 @@
                 class="w3-modal-content w3-card-8 w3-animate-zoom"
                 style="max-width: 600px"
             >
-                <!-- Modal Header -->
                 <div class="w3-container w3-teal">
                     <h2>Find Text</h2>
                     <span
@@ -892,7 +886,6 @@
 
                 <!-- Modal Content -->
                 <div class="w3-container">
-                    <!-- Prevent default form submission -->
                     <input type="hidden" name="noteId" id="findNoteId" />
                     <input
                         type="text"
@@ -949,9 +942,6 @@
                     completionTime;
 
                 DelegatedHandleNoteTypeChange();
-
-                // You may also need to fetch additional data if required, like shared users
-                // fetchAdditionalData(id);
             }
 
             function updateTask(e) {
@@ -967,8 +957,6 @@
                 var completionDate = e.getAttribute("data-completiondate");
                 var status = e.getAttribute("data-notestatus");
                 var delegation = e.getAttribute("data-delegation");
-
-                //fetchNoteData(id);
 
                 // Populate the edit form fields with the note data
                 document.getElementById("editTitle").value = title;
@@ -1000,8 +988,6 @@
                 // Assuming taskId is a string, you can convert it to an integer using parseInt
                 var noteID = parseInt(taskId, 10);
 
-                // Now you have the noteID as an integer, and you can use it as needed
-                // For example, you can set it as the value of an input field
                 document.getElementById("taskIdToDelete").value = noteID;
             }
 
@@ -1015,11 +1001,7 @@
                 // Assuming taskId is a string, you can convert it to an integer using parseInt
                 var noteID = parseInt(taskId, 10);
 
-                // Now you have the noteID as an integer, and you can use it as needed
-                // For example, you can set it as the value of an input field
                 document.getElementById("taskIdToShare").value = noteID;
-                /*var form = document.getElementById("share-note");
-                form.submit();*/
             }
 
             function openRemoveModal(noteID) {

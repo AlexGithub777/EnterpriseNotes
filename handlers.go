@@ -347,7 +347,7 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
         
         http.SetCookie(w, &http.Cookie{
             Name:  "errorMessage",
-            Value: "Note title or description exceeds 256 characters.", // Set your error message
+            Value: "Create Error: Note title or description exceeds 256 characters.", // Set your error message
             Path:  "/list", // Set the path as needed
         })
         http.Redirect(w, r, "/list", http.StatusSeeOther)
@@ -375,6 +375,8 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+	const MaxNoteLength = 256
+
     var note Note
     note.ID, _ = strconv.Atoi(r.FormValue("Id")) // Given ID
     note.Title = r.FormValue("Title")
@@ -384,6 +386,20 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
     note.TaskCompletionDate.String = r.FormValue("TaskCompletionDate")
     note.NoteStatus.String = r.FormValue("NoteStatus")
     note.NoteDelegation.String = r.FormValue("NoteDelegation")
+
+
+	// Validate the length of title and description
+    if len(note.Title) > MaxNoteLength || len(note.Description) > MaxNoteLength {
+        
+        
+        http.SetCookie(w, &http.Cookie{
+            Name:  "errorMessage",
+            Value: "Update Error: Note title or description exceeds 256 characters.", // Set your error message
+            Path:  "/list", // Set the path as needed
+        })
+        http.Redirect(w, r, "/list", http.StatusSeeOther)
+        return
+    }
 
     // Update the note in the database
     err := a.updateNoteInDatabase(note)
