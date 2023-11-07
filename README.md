@@ -9,7 +9,7 @@ This application was created to demonstrate the following:</p>
 -   Go HTML templates with [W3.CSS](https://www.w3schools.com/w3css/w3css_examples.asp) stylesheet
 -   RESTful API with gorilla/mux
 -   Datastorage using PostgreSQL - tested with 15.4.1
--   Session mannagement with icza/session 
+-   Session management with icza/session 
 -   Create, Read, Update and Delete Notes/Tasks
 -   Searching for Notes/Tasks based on attributes - Validation for Text Patterns from assignment brief was attempted, but not executed in application. 
 -   Share function for Notes/Tasks
@@ -77,10 +77,14 @@ The application uses the following Go packages to build;
 
 -   [Datastore: PostgreSQL driver](https://github.com/jackc/pgx/)
 -   [HTTP router: Gorilla mux](https://github.com/gorilla/mux)
+-   [Session Management: icza session](https://github.com/icza/session)
+-   [Password Hashing: bcrypt](https://golang.org/x/crypto)
+-   [Mock database for testing: go-sqlmock](https://github.com/DATA-DOG/go-sqlmock)
+-   [Other testing packages: testify](https://github.com/stretchr/testify)
 
 ## Datastore
 
-This version application requires a separate database to function - PostgreSQL. A few CSV files are imported from the local data folder. This will be imported when the application is run for the first time. Thereafter the application will use the database each time it is executed.
+This version application requires a separate database to function - PostgreSQL. Demonstration Notes/Tasks are imported from a local CSV file in the local data folder. This will be imported when the application is run for the first time. Thereafter the application will use the database each time it is executed.
 
 ## Sample screens
 
@@ -90,10 +94,3 @@ This version application requires a separate database to function - PostgreSQL. 
 ## Session management
 
 The application uses the [icza/session](https://github.com/icza/session) module to handle some basic sessions for the authentication.
-
-Alternate session management be found at the following sources:
-
--   [swithek/sessionup](https://github.com/swithek/sessionup) Simple, yet effective HTTP session management and identification package
--   [gorilla/sessions](https://github.com/gorilla/sessions) - provides cookie and filesystem sessions and infrastructure for custom session backends along with the gorilla mux
--   [alexedwards/scs](https://github.com/alexedwards/scs) - session management with over 19 different datastores
--   [](https://github.com/adam-hanna/sessions) - A dead simple, highly performant, highly customizable sessions service for go http servers using redis as a datastore.
