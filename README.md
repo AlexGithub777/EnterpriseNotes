@@ -37,7 +37,7 @@ To run the server on your Windows system:
 1. Run `buildpkg.cmd` in the root of the repo to build the binary (`notes.exe`) using non vendored packages
 1. Run `buildvendor.cmd` in the root of the repo to build the binary (`notes.exe`) with the vendor
 1. Run the binary `notes.exe` or used the run.cmd (has env variable set)
-1. Browse to [http://192.168.1.102:8080](http://192.168.1.102:8080) to test the application out. If port 8080 does not work, you can start the app as follows using your console, where \*\*\*\* is your chosen port number.
+1. Browse to [http://localhost:8080](http://localhost:8080) to test the application out. If port 8080 does not work, you can start the app as follows using your console, where \*\*\*\* is your chosen port number.
 
     ```
         > ./notes.exe ****
