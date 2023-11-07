@@ -2,15 +2,18 @@
 
 # Introduction
 
-This aim of this project is to create a basic notes application - based off [pwrcost](https://github.com/yonush/pwrcost). It uses mostly built-in Go's packages such as `net/http`, `database/sql`, `strconv`, `html/template` and uses third party packages `gorilla/mux` for the router and `jackc/pgx` for the PostegreSQL driver
+This aim of this project is to create a basic notes application - based off [pwrcost](https://github.com/yonush/pwrcost). It uses mostly built-in Go's packages such as `net/http`, `database/sql`, `strconv`, `html/template` and uses third party packages `gorilla/mux` for the router, `jackc/pgx` for the PostegreSQL driver and `icza/session ` for session manangement. 
 
 This application was created to demonstrate the following:</p>
 
 -   Go HTML templates with [W3.CSS](https://www.w3schools.com/w3css/w3css_examples.asp) stylesheet
 -   RESTful API with gorilla/mux
 -   Datastorage using PostgreSQL - tested with 15.4.1
--   View a record details and add/edit records
--   No filtering or sorting has been implemented
+-   Session mannagement with icza/session 
+-   Create, Read, Update and Delete Notes/Tasks
+-   Searching for Notes/Tasks based on attributes - Validation for Text Patterns from assignment brief was attempted, but not executed in application. 
+-   Share function for Notes/Tasks
+-   Count occurrences of specified text snippets within a single Note/Task - Validation for Text Patterns from assignment brief was attempted, but not executed in application. 
 
 The application is standalone requiring no additional WAMP/LAMP dependencies. It has been built and tested on Windows. If the application requires rebuilding, there are two batch files provided. The rebuild assumes there is an existing Go installation on the host computer. The provided batch files will download the required 3rd party packages for the build process.
 
