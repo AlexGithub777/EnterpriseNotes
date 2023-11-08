@@ -346,7 +346,8 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
                user_shares.username AS shared_username
         FROM notes
         LEFT JOIN user_shares ON notes.id = user_shares.note_id
-        WHERE (notes.fts_text @@ plainto_tsquery('english', $1) AND (notes.owner = $2 OR notes.noteDelegation = $2 OR user_shares.username = $2))
+        WHERE (notes.fts_text @@ plainto_tsquery('english', $1) AND (notes.owner = $2 OR notes.noteDelegation = $2))
+        OR (user_shares.username ILIKE $1)
     `
 
     stmt, err := a.db.Prepare(query)
