@@ -52,6 +52,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         checkInternalServerError(err, w)
         return
     }
+	
 
 	 // Sort the notes by NoteCreated in descending order
     sort.Slice(notes, func(i, j int) bool {
@@ -64,6 +65,23 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         checkInternalServerError(err, w)
         return
     }
+
+	// Sort the shared notes by NoteCreated in descending order
+    sort.Slice(sharedNotes, func(i, j int) bool {
+        return sharedNotes[i].NoteCreated.After(sharedNotes[j].NoteCreated)
+    })
+
+	// Retrieve all notes
+    delegatedNotes, err := a.retrieveDelegatedNotes(username)
+    if err != nil {
+        checkInternalServerError(err, w)
+        return
+    }
+
+	// Sort the delegated notes by NoteCreated in descending order
+    sort.Slice(delegatedNotes, func(i, j int) bool {
+        return delegatedNotes[i].NoteCreated.After(delegatedNotes[j].NoteCreated)
+    })
 
     // Get the list of all users
     allUsers, err := a.getAllUsers(username)
@@ -87,6 +105,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     data := struct {
         Username      string
         Notes         []Note
+		DelegatedNotes []Note
         AllUsers      []User
         SharedNotes   []Note
         Message string
@@ -94,6 +113,7 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     }{
         Username:      username,
         Notes:         notes,
+		DelegatedNotes: delegatedNotes,
         AllUsers:      allUsers,
         SharedNotes:   sharedNotes,
         Message: message,

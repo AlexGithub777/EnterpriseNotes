@@ -163,7 +163,7 @@
                                 >
                                     Find
                                 </button>
-                                {{if eq $note.Owner $.Username}}
+                                
                                 <!-- If the note is owned by the current user, show the normal "Modify" button -->
                                 <button
                                     class="w3-btn w3-teal"
@@ -179,8 +179,104 @@
                                 >
                                     Modify
                                 </button>
-                                {{else if eq $note.NoteDelegation.String
-                                $.Username}}
+                                <button
+                                    class="w3-btn w3-blue"
+                                    onclick="openOptions(this);"
+                                    data-noteid="{{$note.ID}}"
+                                >
+                                    Share
+                                </button>
+                                <button
+                                    class="w3-btn w3-red"
+                                    onclick="deleteTask(this);"
+                                    data-taskid="{{$note.ID}}"
+                                >
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+
+                <h3>Notes Delegated to me</h3>
+                <table
+                    class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
+                >
+                    <thead>
+                        <tr>
+                            <th>Owner</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Created</th>
+                            <th>Completion Time</th>
+                            <th>Completion Date</th>
+                            <th>Status</th>
+                            <th>Delegation</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range $index, $note := .DelegatedNotes}}
+                        <tr>
+                            <td>{{$note.Owner}}</td>
+                            <td>{{$note.Title}}</td>
+                            <td>{{$note.NoteType}}</td>
+                            <td>{{$note.Description}}</td>
+                            <td>
+                                {{if $note.NoteCreated.IsZero}}
+                                    N/A
+                                {{else}}
+                                    {{$note.NoteCreated.Format "02/01/2006 3:04 PM"}}
+                                {{end}}
+                            </td>                                                    
+                            <td>
+                                {{if $note.TaskCompletionTime.Valid}}
+                                    {{if ne $note.TaskCompletionTime.String ""}}
+                                        {{formatTime "15:04" $note.TaskCompletionTime.String}}
+                                    {{else}}
+                                        N/A
+                                    {{end}}
+                                {{else}}
+                                    N/A
+                                {{end}}
+                            </td>                            
+                            <td>
+                                {{if $note.TaskCompletionDate.Valid}}
+                                    {{if ne $note.TaskCompletionDate.String ""}}
+                                        {{formatDate "2006-01-02" $note.TaskCompletionDate.String}}
+                                    {{else}}
+                                        N/A
+                                    {{end}}
+                                {{else}}
+                                    N/A
+                                {{end}}
+                            </td>                                                                                
+                            <td>
+                                {{if and $note.NoteStatus.Valid (eq $note.NoteStatus.String "")}}
+                                    None
+                                {{else}}
+                                    {{$note.NoteStatus.String}}
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if and $note.NoteDelegation.Valid (eq $note.NoteDelegation.String "")}}
+                                    None
+                                {{else}}
+                                    {{$note.NoteDelegation.String}}
+                                {{end}}
+                            </td>
+
+                            <td>
+                                <button
+                                    class="w3-btn w3-green"
+                                    onclick="openFindModal(this);"
+                                    find-noteID="{{$note.ID}}"
+                                >
+                                    Find
+                                </button>
+                                
                                 <!-- If the note is delegated to the current user, show the "Modify Delegated" button -->
                                 <button
                                     class="w3-btn w3-teal"
@@ -196,24 +292,7 @@
                                 >
                                     Modify
                                 </button>
-                                <!--If the note is owned by the current user, show share and delete buttons-->
-                                {{end}} {{if eq $note.Owner $.Username}}
-                                <button
-                                    class="w3-btn w3-blue"
-                                    onclick="openOptions(this);"
-                                    data-noteid="{{$note.ID}}"
-                                >
-                                    Share
-                                </button>
-                                <button
-                                    class="w3-btn w3-red"
-                                    onclick="deleteTask(this);"
-                                    data-taskid="{{$note.ID}}"
-                                >
-                                    Delete
-                                </button>
-                                <!--If the note is delegated to current user, show remove delegation button-->
-                                {{end}} {{if not (eq $note.Owner $.Username)}}
+                                <!-- If the note is delegated to the current user, show the "Remove Delegation" button -->
                                 <button
                                     class="w3-btn w3-red"
                                     onclick="removeDelegation(this);"
@@ -221,7 +300,6 @@
                                 >
                                     Remove Delegation
                                 </button>
-                                {{end}}
                             </td>
                         </tr>
                         {{end}}

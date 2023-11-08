@@ -10,7 +10,7 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
 	// Prepare the SQL statement for fetching notes and shared users' data
 	query := `
 		SELECT
-		n.*, u.username, us.privileges
+		 n.id, n.title, n.noteType, n.description, n.noteCreated, n.taskCompletionTime, n.taskCompletionDate, n.noteStatus, n.noteDelegation, n.owner, u.username, us.privileges
 		FROM
 			notes n
 		LEFT JOIN
@@ -18,7 +18,7 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
 		LEFT JOIN
 			users u ON us.username = u.username
 		WHERE
-			n.owner = $1 OR n.noteDelegation = $1
+			n.owner = $1
 	`
 
 	stmt, err := a.db.Prepare(query)
@@ -42,7 +42,7 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
 		err := rows.Scan(
 			&note.ID, &note.Title, &note.NoteType, &note.Description, &note.NoteCreated,
 			&note.TaskCompletionTime, &note.TaskCompletionDate, &note.NoteStatus,
-			&note.NoteDelegation, &note.Owner, &note.FTSText,
+			&note.NoteDelegation, &note.Owner,
 			&sharedUser.Username, &sharedUser.Privileges,
 		)
 		if err != nil {
@@ -63,6 +63,55 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
 	}
 
 	return notes, nil
+}
+
+func (a *App) retrieveDelegatedNotes(username string) ([]Note, error) {
+    // Prepare the SQL statement for fetching delegated notes
+    query := `
+        SELECT
+            n.id, n.title, n.noteType, n.description, n.noteCreated, n.taskCompletionTime, n.taskCompletionDate, n.noteStatus, n.noteDelegation, n.owner
+        FROM
+            notes n
+        WHERE
+            n.noteDelegation = $1
+    `
+
+    stmt, err := a.db.Prepare(query)
+    if err != nil {
+        return nil, err
+    }
+    defer stmt.Close()
+
+    rows, err := stmt.Query(username)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var delegatedNotes []Note
+    for rows.Next() {
+        var note Note
+
+        err := rows.Scan(
+			&note.ID,
+            &note.Title,
+            &note.NoteType,
+            &note.Description,
+            &note.NoteCreated,
+            &note.TaskCompletionTime,
+            &note.TaskCompletionDate,
+            &note.NoteStatus,
+            &note.NoteDelegation,
+            &note.Owner,
+        )
+        if err != nil {
+            return nil, err
+        }
+
+        delegatedNotes = append(delegatedNotes, note)
+    }
+
+    return delegatedNotes, nil
 }
 
 
