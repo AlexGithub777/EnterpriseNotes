@@ -62,7 +62,7 @@
                         </div>
                     </div>
                 </header>
-                <h3>Search Notes</h3>
+                <h3>Search Notes/Tasks:</h3>
                 <form class="w3-container" action="/search" method="post">
                     <input
                         class="w3-input"
@@ -72,39 +72,44 @@
                     />
                     <button class="w3-btn w3-teal" type="submit">Search</button>
                 </form>
-                <h3>My notes</h3>
+                <h3>My Notes/Tasks:</h3>
                 <table
                     class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
                 >
                     <thead>
                         <tr>
-                            <th>Owner</th>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Description</th>
-                            <th>Created</th>
-                            <th>Completion Time</th>
-                            <th>Completion Date</th>
-                            <th>Status</th>
-                            <th>Delegation</th>
-                            <th>Shared Users</th>
-                            <th>Actions</th>
+                            <th>Type:</th>
+                            <th>Created:</th>
+                            <th>Title:</th>
+                            <th>Description:</th>
+                            <th>Status:</th>
+                            <th>Completion Time:</th>
+                            <th>Completion Date:</th>
+                            <th>Delegated To:</th>
+                            <th>Shared Users:</th>
+                            <th>Actions:</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{range $index, $note := .Notes}}
                         <tr>
-                            <td>{{$note.Owner}}</td>
-                            <td>{{$note.Title}}</td>
                             <td>{{$note.NoteType}}</td>
-                            <td>{{$note.Description}}</td>
                             <td>
                                 {{if $note.NoteCreated.IsZero}}
                                     N/A
                                 {{else}}
                                     {{$note.NoteCreated.Format "02/01/2006 3:04 PM"}}
                                 {{end}}
-                            </td>                                                    
+                            </td> 
+                            <td>{{$note.Title}}</td>
+                            <td>{{$note.Description}}</td>
+                            <td>
+                                {{if and $note.NoteStatus.Valid (eq $note.NoteStatus.String "")}}
+                                    None
+                                {{else}}
+                                    {{$note.NoteStatus.String}}
+                                {{end}}
+                            </td>                                            
                             <td>
                                 {{if $note.TaskCompletionTime.Valid}}
                                     {{if ne $note.TaskCompletionTime.String ""}}
@@ -128,15 +133,8 @@
                                 {{end}}
                             </td>                                                                                
                             <td>
-                                {{if and $note.NoteStatus.Valid (eq $note.NoteStatus.String "")}}
-                                    None
-                                {{else}}
-                                    {{$note.NoteStatus.String}}
-                                {{end}}
-                            </td>
-                            <td>
                                 {{if and $note.NoteDelegation.Valid (eq $note.NoteDelegation.String "")}}
-                                    None
+                                    Not Delegated
                                 {{else}}
                                     {{$note.NoteDelegation.String}}
                                 {{end}}
@@ -144,7 +142,7 @@
                             <td>
                                 <!-- Display the list of shared users for this note -->
                                 {{if eq (len $note.SharedUsers) 0}}
-                                    None
+                                    Not Shared
                                 {{else}}
                                     {{range $index, $sharedUser := $note.SharedUsers}}
                                         {{if $index}}
@@ -199,38 +197,44 @@
                     </tbody>
                 </table>
 
-                <h3>Notes Delegated to me</h3>
+                <h3>Notes/Tasks Delegated to me</h3>
                 <table
                     class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
                 >
                     <thead>
                         <tr>
-                            <th>Owner</th>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Description</th>
-                            <th>Created</th>
-                            <th>Completion Time</th>
-                            <th>Completion Date</th>
-                            <th>Status</th>
-                            <th>Delegation</th>
-                            <th>Actions</th>
+                            <th>Owner:</th>
+                            <th>Type:</th>
+                            <th>Created:</th>
+                            <th>Title:</th>
+                            <th>Description:</th>
+                            <th>Status:</th> 
+                            <th>Completion Time:</th>
+                            <th>Completion Date:</th>
+                            <th>Actions:</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{range $index, $note := .DelegatedNotes}}
                         <tr>
                             <td>{{$note.Owner}}</td>
-                            <td>{{$note.Title}}</td>
                             <td>{{$note.NoteType}}</td>
-                            <td>{{$note.Description}}</td>
                             <td>
                                 {{if $note.NoteCreated.IsZero}}
                                     N/A
                                 {{else}}
                                     {{$note.NoteCreated.Format "02/01/2006 3:04 PM"}}
                                 {{end}}
-                            </td>                                                    
+                            </td> 
+                            <td>{{$note.Title}}</td>
+                            <td>{{$note.Description}}</td>
+                            <td>
+                                {{if and $note.NoteStatus.Valid (eq $note.NoteStatus.String "")}}
+                                    None
+                                {{else}}
+                                    {{$note.NoteStatus.String}}
+                                {{end}}
+                            </td>                                              
                             <td>
                                 {{if $note.TaskCompletionTime.Valid}}
                                     {{if ne $note.TaskCompletionTime.String ""}}
@@ -253,21 +257,6 @@
                                     N/A
                                 {{end}}
                             </td>                                                                                
-                            <td>
-                                {{if and $note.NoteStatus.Valid (eq $note.NoteStatus.String "")}}
-                                    None
-                                {{else}}
-                                    {{$note.NoteStatus.String}}
-                                {{end}}
-                            </td>
-                            <td>
-                                {{if and $note.NoteDelegation.Valid (eq $note.NoteDelegation.String "")}}
-                                    None
-                                {{else}}
-                                    {{$note.NoteDelegation.String}}
-                                {{end}}
-                            </td>
-
                             <td>
                                 <button
                                     class="w3-btn w3-green"
@@ -306,38 +295,44 @@
                     </tbody>
                 </table>
 
-                <h3>Notes shared with me</h3>
+                <h3>Notes/Tasks shared with me:</h3>
                 <table
                     class="w3-table w3-centered w3-border w3-bordered w3-hoverable"
                 >
                     <thead>
                         <tr>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Description</th>
-                            <th>Created</th>
-                            <th>Completion Time</th>
-                            <th>Completion Date</th>
-                            <th>Status</th>
-                            <th>Delegation</th>
-                            <th>Shared from</th>
-                            <!-- New header for shared from -->
-                            <th>Actions</th>
+                            <th>Type:</th>
+                            <th>Created:</th>
+                            <th>Title:</th>
+                            <th>Description:</th>
+                            <th>Status:</th>
+                            <th>Completion Time:</th>
+                            <th>Completion Date:</th>
+                            <th>Delegated To:</th>
+                            <th>Shared from:</th>
+                            <th>Actions:</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{range $index, $note := .SharedNotes}}
                         <tr>
-                            <td>{{$note.Title}}</td>
                             <td>{{$note.NoteType}}</td>
-                            <td>{{$note.Description}}</td>
                             <td>
                                 {{if $note.NoteCreated.IsZero}}
                                     N/A
                                 {{else}}
                                     {{$note.NoteCreated.Format "02/01/2006 3:04 PM"}}
                                 {{end}}
-                            </td>                                                      
+                            </td> 
+                            <td>{{$note.Title}}</td>
+                            <td>{{$note.Description}}</td>
+                            <td>
+                                {{if and $note.NoteStatus.Valid (eq $note.NoteStatus.String "")}}
+                                    None
+                                {{else}}
+                                    {{$note.NoteStatus.String}}
+                                {{end}}
+                            </td>                                                  
                             <td>
                                 {{if $note.TaskCompletionTime.Valid}}
                                     {{if ne $note.TaskCompletionTime.String ""}}
@@ -361,15 +356,8 @@
                                 {{end}}
                             </td>   
                             <td>
-                                {{if and $note.NoteStatus.Valid (eq $note.NoteStatus.String "")}}
-                                    None
-                                {{else}}
-                                    {{$note.NoteStatus.String}}
-                                {{end}}
-                            </td>
-                            <td>
                                 {{if and $note.NoteDelegation.Valid (eq $note.NoteDelegation.String "")}}
-                                    None
+                                    Not Delegated
                                 {{else}}
                                     {{$note.NoteDelegation.String}}
                                 {{end}}

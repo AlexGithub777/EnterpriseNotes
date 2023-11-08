@@ -337,6 +337,9 @@ func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note
     }*/
 	
 	// Prepare the SQL statement for searching notes
+
+	// Can only search for "My Notes/Tasks" and "Notes/Tasks delegated to me" cant search for notes in "Notes/Tasks shared with me"
+
     query := `
         SELECT notes.id, notes.title, notes.noteType, notes.description, notes.noteCreated,
                notes.taskCompletionDate, notes.taskCompletionTime, notes.noteStatus, notes.noteDelegation, notes.owner,
