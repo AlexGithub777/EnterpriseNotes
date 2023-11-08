@@ -128,21 +128,30 @@
                                 {{end}}
                             </td>                                                                                
                             <td>
-                                {{if $note.NoteStatus.Valid}}
-                                {{$note.NoteStatus.String}} {{else}} N/A {{end}}
+                                {{if and $note.NoteStatus.Valid (eq $note.NoteStatus.String "")}}
+                                    None
+                                {{else}}
+                                    {{$note.NoteStatus.String}}
+                                {{end}}
                             </td>
                             <td>
-                                {{if $note.NoteDelegation.Valid}}
-                                {{$note.NoteDelegation.String}} {{else}} N/A
+                                {{if and $note.NoteDelegation.Valid (eq $note.NoteDelegation.String "")}}
+                                    None
+                                {{else}}
+                                    {{$note.NoteDelegation.String}}
                                 {{end}}
                             </td>
                             <td>
                                 <!-- Display the list of shared users for this note -->
-                                {{range $index, $sharedUser := $note.SharedUsers}}
-                                    {{if $index}}
-                                        , {{$sharedUser.Username.String}}
-                                    {{else}}
-                                        {{$sharedUser.Username.String}}
+                                {{if eq (len $note.SharedUsers) 0}}
+                                    None
+                                {{else}}
+                                    {{range $index, $sharedUser := $note.SharedUsers}}
+                                        {{if $index}}
+                                            , {{$sharedUser.Username.String}}
+                                        {{else}}
+                                            {{$sharedUser.Username.String}}
+                                        {{end}}
                                     {{end}}
                                 {{end}}
                             </td>
@@ -272,13 +281,17 @@
                                 {{end}}
                             </td>   
                             <td>
-                                {{if $note.NoteStatus.Valid}}
-                                {{$note.NoteStatus.String}} {{else}} N/A
+                                {{if and $note.NoteStatus.Valid (eq $note.NoteStatus.String "")}}
+                                    None
+                                {{else}}
+                                    {{$note.NoteStatus.String}}
                                 {{end}}
                             </td>
                             <td>
-                                {{if $note.NoteDelegation.Valid}}
-                                {{$note.NoteDelegation.String}} {{else}} N/A
+                                {{if and $note.NoteDelegation.Valid (eq $note.NoteDelegation.String "")}}
+                                    None
+                                {{else}}
+                                    {{$note.NoteDelegation.String}}
                                 {{end}}
                             </td>
                             <td>{{$note.Owner}}</td>
@@ -304,7 +317,7 @@
                                     class="w3-btn w3-red"
                                     onclick="openRemoveModal('{{$note.ID}}');"
                                 >
-                                    Remove
+                                    Stop sharing with me
                                 </button>
                             </td>
                         </tr>
@@ -406,7 +419,6 @@
                             name="NoteDelegation"
                             id="NoteDelegation"
                         >
-                            <option value="" selected></option>
                             <!-- Generate options from user data -->
                             {{range $user := .AllUsers}}
                             <option value="{{$user.Username}}">
@@ -1255,9 +1267,11 @@
 
                 if (status === "Delegated") {
                     delegationDropdown.disabled = false;
+                    delegationDropdown.required = true;
                 } else {
                     delegationDropdown.disabled = true;
                     delegationDropdown.value = ""; // Clear the value of the delegation dropdown
+                    delegationDropdown.required = false;
                 }
             }
 
@@ -1268,9 +1282,11 @@
 
                 if (status === "Delegated") {
                     delegationDropdown.disabled = false;
+                    delegationDropdown.required = true;
                 } else {
                     delegationDropdown.disabled = true;
                     delegationDropdown.value = ""; // Clear the value of the delegation dropdown
+                    delegationDropdown.required = false;
                 }
             }
 
@@ -1323,35 +1339,6 @@
                 }
             }
 
-            // Function to handle note type change FOR EDIT MODAL
-            function DelegatedHandleNoteTypeChange() {
-                var noteType =
-                    document.getElementById("DelegatedNoteType").value;
-                var completionTimeFieldDiv = document.getElementById(
-                    "DelegatedTaskCompletionTimeDiv"
-                );
-                var completionDateFieldDiv = document.getElementById(
-                    "DelegatedTaskCompletionDateDiv"
-                );
-
-                var completionTimeField = document.getElementById(
-                    "DelegatedTaskCompletionTime"
-                );
-                var completionDateField = document.getElementById(
-                    "DelegatedTaskCompletionDate"
-                );
-
-                if (noteType === "Task") {
-                    completionTimeFieldDiv.style.display = "block";
-                    completionDateFieldDiv.style.display = "block";
-                } else {
-                    completionTimeFieldDiv.style.display = "none";
-                    completionDateFieldDiv.style.display = "none";
-                    // Set the value to an empty string if not a task
-                    completionTimeField.value = "";
-                    completionDateField.value = "";
-                }
-            }
 
             function removeDelegation(button) {
                 // Assuming 'button' is the button element that was clicked

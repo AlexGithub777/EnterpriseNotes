@@ -1,5 +1,5 @@
 title,noteType,description,taskCompletionTime,taskCompletionDate,noteStatus,noteDelegation,owner,fts_text
 "Meeting with Client","Task","Discuss project details","14:00","2024-10-23","Delegated","BIGCAT","mydog7",NULL
-"Visit Mum","Note","Go shopping","","","","","mydog7",NULL
+"Visit Mum","Note","Go shopping","","","None","","mydog7",NULL
 "Buy Groceries","Task","Purchase groceries for the week","18:00","2023-11-01","None","","BIGCAT",NULL
 "Book Flight Tickets","Task","Book flight tickets for the upcoming vacation","13:00","2023-11-21","None","","BIGCAT",NULL
