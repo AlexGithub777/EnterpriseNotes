@@ -327,7 +327,7 @@ func TestFindInNoteHandler(t *testing.T) {
     a := App{}
     a.Initialize()
 
-	// Set the DISABLE_AUTH environment variable to "1" to disable authentication checks
+    // Set the DISABLE_AUTH environment variable to "1" to disable authentication checks
     os.Setenv("DISABLE_AUTH", "1")
 
     // Create a mock HTTP request with a valid noteID and search pattern
@@ -345,8 +345,11 @@ func TestFindInNoteHandler(t *testing.T) {
         t.Errorf("Handler returned wrong status code: got %v, want %v", status, http.StatusOK)
     }
 
-    // You can add assertions to check the response body, headers, or other aspects.
+    // Parse and log the response body (error details)
+    responseBody := rr.Body.String()
+    t.Logf("Response Body: %s", responseBody)
 }
+
 
 func TestIndexHandler(t *testing.T) {
     // Create a new instance of your application
