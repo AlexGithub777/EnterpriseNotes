@@ -33,7 +33,9 @@ The application is standalone requiring no additional WAMP/LAMP dependencies. It
 
 ## Additional specifications that were missing but required to implement application
 
--   A note can only be delegated to one person. Only ther owner of the note can delegate a note. The user who the note has been delegated to will have the permission to edit the title and description, and will be able to remove their delegation of the note.
+-   A note can only be delegated to one person. The owner and a user who has had a note shared with editing priveleges can delegate a note. The user who the note has been delegated to will have the permission to edit the title and description, and will be able to remove their delegation of the note.
+
+-   Session management is not handled by Go's `net/http`. This was adressed using the third party package `icza/session`.
 
 ## Building
 
