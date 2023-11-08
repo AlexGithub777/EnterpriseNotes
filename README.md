@@ -6,7 +6,7 @@ This aim of this project is to create a basic notes application - based off [pwr
 
 This application has been designed to run on any operating system and be accessible via any modern web browser, making it highly versatile. Our application's core logic, database interaction, and most of the processing are done on the server side. The application can be compiled to run on any popular server OS. This server-side processing is not dependent on the user's operating system or browser. This ensures that the core functionality is consistent across different platforms. The user interface is delivered through web pages. These web pages are rendered on the client-side using HTML, CSS, and JavaScript. Modern web standards ensure that web content is rendered consistently across various browsers and operating systems.
 
-## Quick start guide
+## Quick start guide to install application a new server
 
 [Click here to view Quick Start Guide](docs/QuickStartGuide.md)
 
