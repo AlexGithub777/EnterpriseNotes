@@ -252,8 +252,11 @@ func (a *App) insertNoteIntoDatabase(note Note) error {
 	// Prepare the SQL statement for inserting a new note
 	insertQuery := `
         INSERT INTO notes (title, noteType, description, TaskCompletionDate, TaskCompletionTime, NoteStatus, NoteDelegation, owner, fts_text)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, to_tsvector('english', $1 || ' ' || $2 || ' ' || $3 || ' ' || $4 || ' ' || $5 || ' ' || $6 || ' ' || $7 || ' ' || $8))
-    `
+		VALUES (
+			$1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text, $8::text,
+			to_tsvector('english', $1::text || ' ' || $2::text || ' ' || $3::text || ' ' || $4::text || ' ' || $5::text || ' ' || $6::text || ' ' || $7::text || ' ' || $8::text)
+		)
+		`
 
 	insertStmt, err := a.db.Prepare(insertQuery)
 	if err != nil {

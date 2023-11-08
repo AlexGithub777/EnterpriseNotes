@@ -341,6 +341,8 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
     note.NoteStatus.String = r.FormValue("NoteStatus")
     note.NoteDelegation.String = r.FormValue("NoteDelegation")
 
+	
+
     // Validate the length of title and description
     if len(note.Title) > MaxNoteLength || len(note.Description) > MaxNoteLength {
         

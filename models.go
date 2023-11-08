@@ -118,29 +118,29 @@ func (a *App) importData() error {
     // Create table as required, along with attribute constraints
     createTablesSQL := `
     CREATE TABLE IF NOT EXISTS "users" (
-        username TEXT UNIQUE PRIMARY KEY NOT NULL,
-        password TEXT NOT NULL
+        username VARCHAR(50) UNIQUE PRIMARY KEY NOT NULL,
+        password VARCHAR(255) NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS "notes" (
         id SERIAL PRIMARY KEY NOT NULL,
-        title TEXT NOT NULL,
-        noteType TEXT NOT NULL,
-        description TEXT NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        noteType VARCHAR(255) NOT NULL,
+        description VARCHAR(255) NOT NULL,
         noteCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        taskCompletionTime TEXT,
-        taskCompletionDate TEXT,
-        noteStatus TEXT,
-        noteDelegation TEXT,
-        owner TEXT,
+        taskCompletionTime VARCHAR(255),
+        taskCompletionDate VARCHAR(255),
+        noteStatus VARCHAR(20),
+        noteDelegation VARCHAR(50),
+        owner VARCHAR(50),
         fts_text tsvector,
         FOREIGN KEY (owner) REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS "user_shares" (
         note_id INTEGER NOT NULL,
-        username TEXT NOT NULL,
-        privileges TEXT NOT NULL,
+        username VARCHAR(50) NOT NULL,
+        privileges VARCHAR(20) NOT NULL,
         PRIMARY KEY (username, note_id),
         FOREIGN KEY (note_id) REFERENCES notes (id) ON UPDATE CASCADE ON DELETE CASCADE,
         FOREIGN KEY (username) REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE
