@@ -539,30 +539,38 @@ func (a *App) updateUserPrivileges(selectedUsername, updatedPrivileges, noteID s
 
 
 func (a *App) findTextInNote(noteID int, searchPattern string) ([]SearchResult, error) {
-    // Fetch the note with the given ID to access the title and description
-    note, err := a.getNoteByID(noteID)
-    if err != nil {
-        return nil, err
-    }
-
-    // Count occurrences in the title and description
-    titleOccurrences := countOccurrences(note.Title, searchPattern)
-    descriptionOccurrences := countOccurrences(note.Description, searchPattern)
-
     results := []SearchResult{}
 
-    if titleOccurrences > 0 {
+    if len(searchPattern) > 50 {
+        // Search query exceeds 50 characters, so return a special result
         results = append(results, SearchResult{
-            Count:       titleOccurrences,
-            Description: "Title",
+            Count:       0,
+            Description: "Find Error: Search query exceeds 50 characters",
         })
-    }
+    } else {
+        // Fetch the note with the given ID to access the title and description
+        note, err := a.getNoteByID(noteID)
+        if err != nil {
+            return nil, err
+        }
 
-    if descriptionOccurrences > 0 {
-        results = append(results, SearchResult{
-            Count:       descriptionOccurrences,
-            Description: "Description",
-        })
+        // Count occurrences in the title and description
+        titleOccurrences := countOccurrences(note.Title, searchPattern)
+        descriptionOccurrences := countOccurrences(note.Description, searchPattern)
+
+        if titleOccurrences > 0 {
+            results = append(results, SearchResult{
+                Count:       titleOccurrences,
+                Description: "Title",
+            })
+        }
+
+        if descriptionOccurrences > 0 {
+            results = append(results, SearchResult{
+                Count:       descriptionOccurrences,
+                Description: "Description",
+            })
+        }
     }
 
     return results, nil

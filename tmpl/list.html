@@ -1388,25 +1388,29 @@
                     success: function (data) {
                         console.log("Received search results:", data);
 
-                        if (data && data.length > 0) {
-                            var totalCount = 0; // Initialize the total count variable
-                            for (var i = 0; i < data.length; i++) {
-                                var result = data[i];
-                                var count = result.Count; // Parse the count as an integer
-                                totalCount += count; // Update the total count
-                            }
+                        var totalCount = 0; // Initialize the total count variable
+                        var exceeds50CharactersMessage = ""; // Initialize the message
 
-                            // Update the HTML element with the total count
-                            var searchResults =
-                                "Total occurrences in the note: " + totalCount;
-                            document.getElementById(
-                                "searchResults"
-                            ).textContent = searchResults;
+                        for (var i = 0; i < data.length; i++) {
+                            var result = data[i];
+                            var count = result.Count; // Parse the count as an integer
+                            totalCount += count; // Update the total count
+
+                            if (result.Description === "Find Error: Search query exceeds 50 characters") {
+                                exceeds50CharactersMessage = result.Description;
+                            }
+                        }
+
+                        // Check if exceeds50CharactersMessage is set and display accordingly
+                        if (exceeds50CharactersMessage) {
+                            document.getElementById("searchResults").textContent = exceeds50CharactersMessage;
+                        } else if (totalCount > 0) {
+                            // Display the total count if it exists
+                            var searchResults = "Total occurrences in the note: " + totalCount;
+                            document.getElementById("searchResults").textContent = searchResults;
                         } else {
                             // Display a message when no results are found
-                            document.getElementById(
-                                "searchResults"
-                            ).textContent = "No matching results found";
+                            document.getElementById("searchResults").textContent = "No matching results found";
                         }
                     },
                     error: function (error) {

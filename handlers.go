@@ -243,6 +243,21 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
 
     searchQuery := r.FormValue("searchQuery")
 
+	const MaxSearchLength = 50
+
+	// Validate the length of title and description
+    if len(searchQuery) > MaxSearchLength  {
+        
+        
+        http.SetCookie(w, &http.Cookie{
+            Name:  "errorMessage",
+            Value: "Search Error: Search query exceeds 50 characters.", // Set your error message
+            Path:  "/list", // Set the path as needed
+        })
+        http.Redirect(w, r, "/list", http.StatusSeeOther)
+        return
+    }
+
     // Query your database using FTS to search for notes based on searchQuery
     results, err := a.searchNotesInDatabase(searchQuery, username)
     if err != nil {
@@ -567,6 +582,7 @@ func (a *App) findInNoteHandler(w http.ResponseWriter, r *http.Request) {
     }
 
 	searchPattern := r.FormValue("searchInput")
+
 
     // Implement your search logic to find text in the note with the given noteID.
     // This could involve searching in your data store, such as a database, for the specified text pattern.
