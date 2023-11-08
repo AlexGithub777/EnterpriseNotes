@@ -10,7 +10,7 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
 	// Prepare the SQL statement for fetching notes and shared users' data
 	query := `
 		SELECT
-		 n.id, n.title, n.noteType, n.description, n.noteCreated, n.taskCompletionTime, n.taskCompletionDate, n.noteStatus, n.noteDelegation, n.owner, u.username, us.privileges
+		n.id, n.title, n.noteType, n.description, n.noteCreated, n.taskCompletionTime, n.taskCompletionDate, n.noteStatus, n.noteDelegation, n.owner, u.username, us.privileges
 		FROM
 			notes n
 		LEFT JOIN
