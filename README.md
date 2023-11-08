@@ -4,6 +4,10 @@
 
 This aim of this project is to create a basic notes application - based off [pwrcost](https://github.com/yonush/pwrcost). It uses mostly built-in Go packages such as `net/http`, `database/sql`, `strconv`, `html/template` and uses third party packages `gorilla/mux` for the router, `jackc/pgx` for the PostegreSQL driver and `icza/session ` for session manangement.
 
+## Quick start guide
+
+[Click here to view Quick Start Guide](docs/QuickStartGuide.md)
+
 ## This application requirements are as follows:</p>
 
 > The Enterprise Notes application is an online service to users within an enterprise. The users will need to setup
