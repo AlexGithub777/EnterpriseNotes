@@ -181,17 +181,8 @@ func (a *App) importData() error {
         log.Fatal(err)
     }
 
-	
-   
-	/*// Prepare the user_shares insert query
-	userSharesStmt, err := a.db.Prepare("INSERT INTO user_shares (note_id, username, privileges) VALUES($1, $2, $3)")
-	if err != nil {
-		log.Fatal(err)
-	}*/
-
 
     importDataFromCSV(a, "data/notes.csv", notesStmt, importNotesData)
-    /*importDataFromCSV(a, "data/user_shares.csv", userSharesStmt, importUserSharesData)*/
 
     // Create a temp file to notify data imported (can use the database directly, but this is an example)
     file, err := os.Create("./imported")
@@ -236,58 +227,4 @@ func importNotesData(a *App, row []string) error {
 
     return err
 }
-
-
-
-/*
-func importUserSharesData(a *App, row []string) error {
-    // 1. Ensure Data Integrity
-	// Verify that the data in the user_shares table aligns with the referenced tables (notes and users).
-	
-	// Drop foreign key constraints if they exist
-	dropFKConstraintsSQL := `
-	ALTER TABLE IF EXISTS user_shares DROP CONSTRAINT IF EXISTS user_shares_note_id_fkey;
-	ALTER TABLE IF EXISTS user_shares DROP CONSTRAINT IF EXISTS user_shares_username_fkey;
-	ALTER TABLE IF EXISTS notes DROP CONSTRAINT IF EXISTS notes_owner_fkey;
-	
-	`
-
-	_, err := a.db.Exec(dropFKConstraintsSQL)
-	if err != nil {
-		log.Println("Error dropping foreign key constraints:", err)
-	} else {
-		log.Printf("Foreign key constraints dropped.")
-	}
-	
-
-	
-	
-
-	// 3. Insert Data
-	noteID, err := strconv.Atoi(row[0])
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = a.db.Exec("INSERT INTO user_shares (note_id, username, privileges) VALUES($1, $2, $3)", noteID, row[1], row[2])
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	
-
-    return err
-}
-*/
-
-
-
-
-
-
-
-
-
-	
-
 
