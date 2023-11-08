@@ -2,7 +2,7 @@
 
 This aim of this project is to create a basic notes application - based off [pwrcost](https://github.com/yonush/pwrcost). It uses mostly built-in Go packages such as `net/http`, `database/sql`, `strconv`, `html/template` and uses third party packages `gorilla/mux` for the router, `jackc/pgx` for the PostegreSQL driver and `icza/session` for session management.
 
-## Requirements to run application
+## Requirements to run application in an enterprise evironment
 
 This application has been designed to run on any operating system and be accessible via any modern web browser, making it highly versatile. Our application's core logic, database interaction, and most of the processing are done on the server side. The application can be compiled to run on any popular server OS. This server-side processing is not dependent on the user's operating system or browser. This ensures that the core functionality is consistent across different platforms. The user interface is delivered through web pages. These web pages are rendered on the client-side using HTML, CSS, and JavaScript. Modern web standards ensure that web content is rendered consistently across various browsers and operating systems.
 
