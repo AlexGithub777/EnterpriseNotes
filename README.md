@@ -10,7 +10,7 @@ This aim of this project is to create a basic notes application - based off [pwr
 > a new account within the Enterprise Note service. All users can create a note; the user who created a note is
 > the owner of that note. All users have access to the list of registered users. A note can be shared with other
 > users providing either read access or read/write access, which is set per user.
-> Apart from metadata required to administer the note/task;
+> Apart from metadata required to administer the note/task
 
 -   A note just contains text (embedded media like video, images, etc is not required).
 -   A note should have a name to aid with identification of the note.
@@ -30,6 +30,10 @@ This aim of this project is to create a basic notes application - based off [pwr
 -   Count occurrences of specified text snippets within a single Note/Task - Validation for Text Patterns from assignment brief was attempted, but not executed in application.
 
 The application is standalone requiring no additional WAMP/LAMP dependencies. It has been built and tested on Windows. If the application requires rebuilding, there are two batch files provided. The rebuild assumes there is an existing Go installation on the host computer. The provided batch files will download the required 3rd party packages for the build process.
+
+## Additional specifications that were missing but required to implement application
+
+-   A note can only be delegated to one person. Only ther owner of the note can delegate a note. The user who the note has been delegated to will have the permission to edit the title and description, and will be able to remove their delegation of the note.
 
 ## Building
 
