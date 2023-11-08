@@ -70,3 +70,7 @@ Before you begin, make sure you have the following prerequisites:
 -   Test the application by creating, listing, and managing notes.
 
 8. **Security**: Ensure that your server is properly secured, especially if it's accessible from the internet. You may need to configure firewalls, apply security updates, and implement authentication mechanisms to protect your application and database.
+
+### Non Windows
+
+Testing has been performed on WSL & Linux but not MacOS. However, the commands in buildpkg.cmd and buildvendor.cmd can be run manually to build and run this demo.

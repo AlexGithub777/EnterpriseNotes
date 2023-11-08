@@ -43,59 +43,9 @@ The application is standalone requiring no additional WAMP/LAMP dependencies. It
 
 -   Session management is not handled by Go's `net/http`. This was adressed using the third party package `icza/session`.
 
-## Building
+## Language used
 
 This application uses the Go programming language - where the latest was [Go 1.21](https://go.dev/dl/) as of writing this application. If you do not have Go installed on your system, you can acquire a copy from [Go.dev](https://go.dev/dl/). The go1.21.0.windows-amd64.msi was used to build this application.
-
-### Database configuration
-
-The app assumes a database exists - ESD. Edit the _dbsetup.go_ to change the default database name. Database defaults in the _dbsetup.go_ are shown below.
-
-```go
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = ""
-	dbname   = "postgres"
-)
-```
-
-To run the server on your Windows system:
-
-1. Run `buildpkg.cmd` in the root of the repo to build the binary (`notes.exe`) using non vendored packages
-1. Run `buildvendor.cmd` in the root of the repo to build the binary (`notes.exe`) with the vendor
-1. Run the binary `notes.exe` or used the run.cmd (has env variable set)
-1. Browse to [http://localhost:8080](http://localhost:8080) to test the application out. If port 8080 does not work, you can start the app as follows using your console, where \*\*\*\* is your chosen port number.
-
-    ```
-        > ./notes.exe ****
-    ```
-
-### Non Windows
-
-Testing has been performed on WSL & Linux but not MacOS. However, the commands in buildpkg.cmd and buildvendor.cmd can be run manually to build and run this demo.
-
-#### Build by pkg
-
-```bash
-export GO111MODULE="on"
-export GOFLAGS="-mod=mod"
-go mod download
-:: strip debug info during build
-go build -ldflags="-s -w" .
-
-```
-
-#### Build by vendor
-
-```bash
-export GO111MODULE="on"
-export GOFLAGS="-mod=vendor"
-go mod vendor
-:: strip debug info during build
-go build -ldflags="-s -w"
-```
 
 ### Dependencies
 
