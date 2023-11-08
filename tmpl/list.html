@@ -1354,40 +1354,28 @@
             }
 
             function removeDelegation(button) {
-                // Assuming that 'button' is the button element that was clicked
-                var noteID = button.getAttribute("data-taskid");
+                // Assuming 'button' is the button element that was clicked
+                var noteID = button.getAttribute("data-noteid");
 
-                // You can use an AJAX request to send a request to your server to remove the delegation
-                // Example:
-                // Replace the URL and method with your server endpoint and HTTP method
-                var url = "/remove-delegation";
-                var method = "POST";
+                
+                // Make an AJAX request to remove delegation
+                $.ajax({
+                    url: "/remove-delegation/" + noteID,
+                    method: "POST",
+                    contentType: "application/json",
+                    success: function (response) {
+                        // Handle success
+                        alert("Delegation removed successfully.");
 
-                // Create a new XMLHttpRequest object
-                var xhr = new XMLHttpRequest();
-
-                // Configure the request
-                xhr.open(method, url, true);
-                xhr.setRequestHeader("Content-Type", "application/json");
-
-                // Define a callback function to handle the response from the server
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === XMLHttpRequest.DONE) {
-                        if (xhr.status === 200) {
-                            // The delegation was successfully removed
-                            alert("Delegation removed successfully.");
-                            // You can also update the UI as needed, e.g., remove the row from the table
-                            var row = button.closest("tr");
-                            row.parentNode.removeChild(row);
-                        } else {
-                            // Handle errors or display an error message
-                            alert("Error: Unable to remove delegation.");
-                        }
+                        // Refresh the page
+                        location.reload();
+                    },
+                    error: function (error) {
+                        // Handle errors or display an error message
+                        alert("Error: Unable to remove delegation.");
                     }
-                };
+                });
 
-                // Send the request with the noteID in the request payload
-                xhr.send(JSON.stringify({ noteID: noteID }));
             }
 
             function findTextInNotes(searchText, noteId) {

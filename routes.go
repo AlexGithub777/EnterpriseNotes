@@ -30,7 +30,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/getUnsharedUsersForNote/{noteID:[0-9]+}", a.getUnsharedUsersForNoteHandler).Methods("GET")
 	a.Router.HandleFunc("/find/{noteID:[0-9]+}", a.findInNoteHandler).Methods("GET")
 	a.Router.HandleFunc("/update-privileges", a.updatePrivilegesHandler).Methods("POST")
-	a.Router.HandleFunc("/remove-delegation", a.removeDelegationHandler).Methods("POST")
+	a.Router.HandleFunc("/remove-delegation/{noteID:[0-9]+}", a.removeDelegationHandler).Methods("POST")
 	
 
 

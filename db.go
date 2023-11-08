@@ -370,7 +370,7 @@ func isValidSearchQuery(textPattern string) bool {
 
 func (a *App) RemoveDelegation(noteID int) error {
 	// Prepare the SQL statement for removing delegation
-	query := "UPDATE notes SET noteDelegation = NULL WHERE id = $1"
+	query := "UPDATE notes SET noteDelegation = NULL, noteStatus = NULL WHERE id = $1"
 
 	stmt, err := a.db.Prepare(query)
 	if err != nil {

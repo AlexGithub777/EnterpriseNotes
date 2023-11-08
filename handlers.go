@@ -496,22 +496,26 @@ func (a *App) removeSharedNoteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) removeDelegationHandler(w http.ResponseWriter, r *http.Request) {
-	if os.Getenv("DISABLE_AUTH") != "1" {
+    if os.Getenv("DISABLE_AUTH") != "1" {
         // Perform authentication checks only if the environment variable is not set
         a.isAuthenticated(w, r)
-	}
-    // Parse the request and get the note ID
-    var inputData struct {
-        NoteID int // You may need to adjust the data structure as per your needs
     }
-    decoder := json.NewDecoder(r.Body)
-    if err := decoder.Decode(&inputData); err != nil {
-        respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+
+	vars := mux.Vars(r)
+    noteIDStr, ok := vars["noteID"]
+    if !ok {
+        http.Error(w, "Missing noteID in URL", http.StatusBadRequest)
+        return
+    }
+
+    noteID, err := strconv.Atoi(noteIDStr)
+    if err != nil {
+        http.Error(w, "Invalid noteID", http.StatusBadRequest)
         return
     }
 
     // Call the database function to remove delegation
-    if err := a.RemoveDelegation(inputData.NoteID); // Replace with your actual DB function
+    if err := a.RemoveDelegation(noteID); // Replace with your actual DB function
     err != nil {
         respondWithError(w, http.StatusInternalServerError, err.Error())
         return
