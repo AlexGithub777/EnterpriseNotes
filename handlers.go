@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"os"
@@ -121,13 +122,6 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     t, err := template.New("list.html").Funcs(template.FuncMap{
-		"formatTime": func(layout, value string) (string, error) {
-			t, err := time.Parse(layout, value)
-			if err != nil {
-				return "", err
-			}
-			return t.Format("3:04 PM"), nil
-		},
 		"formatDate": func(layout, value string) (string, error) {
 			t, err := time.Parse(layout, value)
 			if err != nil {
@@ -260,12 +254,6 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	// Retrieve all shared notes with privileges
-    sharedNotes, err := a.retrieveSharedNotesWithPrivileges(username)
-    if err != nil {
-        checkInternalServerError(err, w)
-        return
-    }
 
     searchQuery := r.FormValue("searchQuery")
 
@@ -307,26 +295,14 @@ func (a *App) searchNotesHandler(w http.ResponseWriter, r *http.Request) {
         SearchResults []Note
 		SearchQuery string
 		AllUsers      []User
-		SharedNotes   []Note
-        
-		
     }{
 		Username: username,
         SearchResults: results,
 		SearchQuery: searchQuery,
-		AllUsers:      allUsers,
-		SharedNotes:   sharedNotes,
-        
+		AllUsers:      allUsers, 
     }
 
 	var funcMap = template.FuncMap{
-		"formatTime": func(layout, value string) (string, error) {
-			t, err := time.Parse(layout, value)
-			if err != nil {
-				return "", err
-			}
-			return t.Format("3:04 PM"), nil
-		},
 		"formatDate": func(layout, value string) (string, error) {
 			t, err := time.Parse(layout, value)
 			if err != nil {
@@ -382,6 +358,7 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
     note.NoteStatus.String = r.FormValue("NoteStatus")
     note.NoteDelegation.String = r.FormValue("NoteDelegation")
 
+	note.TaskCompletionTime.String = convertTo12HourFormat(r.FormValue("TaskCompletionTime"))
 	
 
     // Validate the length of title and description
@@ -407,6 +384,7 @@ func (a *App) createHandler(w http.ResponseWriter, r *http.Request) {
     http.Redirect(w, r, "/list", http.StatusSeeOther)
 }
 
+
 func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
     if os.Getenv("DISABLE_AUTH") != "1" {
         // Perform authentication checks only if the environment variable is not set
@@ -429,6 +407,7 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
     note.TaskCompletionDate.String = r.FormValue("TaskCompletionDate")
     note.NoteStatus.String = r.FormValue("NoteStatus")
     note.NoteDelegation.String = r.FormValue("NoteDelegation")
+	note.TaskCompletionTime.String = convertTo12HourFormat(r.FormValue("TaskCompletionTime"))
 
 
 	// Validate the length of title and description
@@ -453,6 +432,29 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
 
     // Redirect back to the list page or another appropriate page
     http.Redirect(w, r, "/list", http.StatusSeeOther)
+}
+
+func convertTo12HourFormat(time24hr string) string {
+    t, err := time.Parse("15:04", time24hr)
+    if err != nil {
+        // Handle the error, e.g., return an error message
+        return ""
+    }
+
+    hour := t.Hour()
+    minute := t.Minute()
+    ampm := "AM"
+    if hour >= 12 {
+        ampm = "PM"
+        if hour > 12 {
+            hour -= 12
+        }
+    }
+    if hour == 0 {
+        hour = 12
+    }
+
+    return fmt.Sprintf("%02d:%02d %s", hour, minute, ampm)
 }
 
 func (a *App) deleteHandler(w http.ResponseWriter, r *http.Request) {

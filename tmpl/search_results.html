@@ -72,8 +72,7 @@
                         <td>{{$note.NoteStatus.String}}</td>
                         <td>
                             {{if ne $note.TaskCompletionTime.String ""}}
-                            {{formatTime "15:04"
-                            $note.TaskCompletionTime.String}} {{else}} N/A
+                            {{$note.TaskCompletionTime.String}} {{else}} N/A
                             {{end}}
                         </td>
                         <td>
@@ -82,13 +81,25 @@
                             $note.TaskCompletionDate.String}} {{else}} N/A
                             {{end}}
                         </td>
-                        <td>{{$note.NoteDelegation.String}}</td>
-                        <td> <!-- Display the list of shared users for this note -->
-                            {{range $index, $sharedUser := $note.SharedUsers}}
-                                {{if $index}}
-                                    , {{$sharedUser.Username.String}}
+                        <td>
+                            {{if ne $note.NoteDelegation.String ""}}
+                                    {{$note.NoteDelegation.String}}
                                 {{else}}
-                                    {{$sharedUser.Username.String}}
+                                    Not Delegated
+                            {{end}}
+                        </td>
+                        <td> <!-- Display the list of shared users for this note -->
+                            {{if eq $note.NoteDelegation.String $.Username}}
+                                No Access
+                            {{else if eq (len $note.SharedUsers) 0}}
+                                Not Shared
+                            {{else}}
+                                {{range $index, $sharedUser := $note.SharedUsers}}
+                                    {{if $index}}
+                                        , {{$sharedUser.Username.String}}
+                                    {{else}}
+                                        {{$sharedUser.Username.String}}
+                                    {{end}}
                                 {{end}}
                             {{end}}
                         </td>
@@ -648,9 +659,9 @@
                 var completionDate = e.getAttribute("data-completiondate");
                 var status = e.getAttribute("data-notestatus");
                 var delegation = e.getAttribute("data-delegation");
+                var completionTime = convert12HourTo24Hour(completionTime);
 
-                console.log("Completion Time:", completionTime);
-                console.log("Completion Date:", completionDate);
+                
 
                 // Populate the "Edit Delegated Modal" fields with the data
                 document.getElementById("delegatedTaskIdToUpdate").value = id;
@@ -688,6 +699,7 @@
                 var completionDate = e.getAttribute("data-completiondate");
                 var status = e.getAttribute("data-notestatus");
                 var delegation = e.getAttribute("data-delegation");
+                var completionTime = convert12HourTo24Hour(completionTime);
 
                 //fetchNoteData(id);
 
@@ -1162,6 +1174,25 @@
                         console.error("Failed to perform the search: " + error);
                     },
                 });
+            }
+
+            function convert12HourTo24Hour(time12Hour) {
+                var [timePart, ampm] = time12Hour.split(' ');
+                var [hours, minutes] = timePart.split(':');
+                
+                hours = parseInt(hours, 10);
+                minutes = parseInt(minutes, 10);
+
+                if (ampm === 'PM' && hours < 12) {
+                    hours += 12;
+                } else if (ampm === 'AM' && hours === 12) {
+                    hours = 0;
+                }
+
+                var hoursStr = hours.toString().padStart(2, '0');
+                var minutesStr = minutes.toString().padStart(2, '0');
+
+                return `${hoursStr}:${minutesStr}`;
             }
         </script>
     </body>

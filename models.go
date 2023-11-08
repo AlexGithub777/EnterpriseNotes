@@ -175,14 +175,21 @@ func (a *App) importData() error {
         log.Fatal(err)
     }
 
-    // Prepare the notes insert query
-    notesStmt, err := a.db.Prepare("INSERT INTO notes (title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner, fts_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8, to_tsvector('english', $9))")
-    if err != nil {
-        log.Fatal(err)
-    }
+    insertQuery := `
+        INSERT INTO notes (title, noteType, description, TaskCompletionDate, TaskCompletionTime, NoteStatus, NoteDelegation, owner, fts_text)
+		VALUES (
+			$1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text, $8::text,
+			to_tsvector('english', $1::text || ' ' || $2::text || ' ' || $3::text || ' ' || $4::text || ' ' || $5::text || ' ' || $6::text || ' ' || $7::text)
+		)
+		`
+
+	insertStmt, err := a.db.Prepare(insertQuery)
+	if err != nil {
+		return err
+	}
 
 
-    importDataFromCSV(a, "data/notes.csv", notesStmt, importNotesData)
+    importDataFromCSV(a, "data/notes.csv", insertStmt, importNotesData)
 
     // Create a temp file to notify data imported (can use the database directly, but this is an example)
     file, err := os.Create("./imported")
@@ -221,7 +228,7 @@ func importNotesData(a *App, row []string) error {
     owner := row[7]
     
     // Calculate fts_text using to_tsvector
-    ftsText := fmt.Sprintf("%s %s %s %s %s %s %s %s", title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner)
+    ftsText := fmt.Sprintf("%s %s %s %s %s %s %s", title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation)
 
     _, err := a.db.Exec("INSERT INTO notes (title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner, fts_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8, to_tsvector('english', $9))", title, noteType, description, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner, ftsText)
 
