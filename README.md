@@ -10,7 +10,7 @@ This application has been designed to run on any operating system and be accessi
 
 [Click here to view Quick Start Guide](docs/QuickStartGuide.md)
 
-## This application requirements are as follows:</p>
+## This application requirements are as follows:
 
 The Enterprise Notes application is an online service to users within an enterprise. The users will need to setup
 a new account within the Enterprise Note service. All users can create a note; the user who created a note is
