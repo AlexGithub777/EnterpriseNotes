@@ -12,11 +12,11 @@ This application has been designed to run on any operating system and be accessi
 
 ## This application requirements are as follows:</p>
 
-> The Enterprise Notes application is an online service to users within an enterprise. The users will need to setup
-> a new account within the Enterprise Note service. All users can create a note; the user who created a note is
-> the owner of that note. All users have access to the list of registered users. A note can be shared with other
-> users providing either read access or read/write access, which is set per user.
-> Apart from metadata required to administer the note/task
+The Enterprise Notes application is an online service to users within an enterprise. The users will need to setup
+a new account within the Enterprise Note service. All users can create a note; the user who created a note is
+the owner of that note. All users have access to the list of registered users. A note can be shared with other
+users providing either read access or read/write access, which is set per user.
+Apart from metadata required to administer the note/task
 
 -   A note just contains text (embedded media like video, images, etc is not required).
 -   A note should have a name to aid with identification of the note.
