@@ -19,8 +19,6 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
 			users u ON us.username = u.username
 		WHERE
 			n.owner = $1 OR n.noteDelegation = $1
-		ORDER BY
-		n.id
 	`
 
 	stmt, err := a.db.Prepare(query)

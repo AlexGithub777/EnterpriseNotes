@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"time"
 
@@ -51,6 +52,11 @@ func (a *App) listHandler(w http.ResponseWriter, r *http.Request) {
         checkInternalServerError(err, w)
         return
     }
+
+	 // Sort the notes by NoteCreated in descending order
+    sort.Slice(notes, func(i, j int) bool {
+        return notes[i].NoteCreated.After(notes[j].NoteCreated)
+    })
 
     // Retrieve all shared notes with privileges
     sharedNotes, err := a.retrieveSharedNotesWithPrivileges(username)

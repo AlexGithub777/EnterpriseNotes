@@ -196,6 +196,7 @@
                                 >
                                     Modify
                                 </button>
+                                <!--If the note is owned by the current user, show share and delete buttons-->
                                 {{end}} {{if eq $note.Owner $.Username}}
                                 <button
                                     class="w3-btn w3-blue"
@@ -211,6 +212,7 @@
                                 >
                                     Delete
                                 </button>
+                                <!--If the note is delegated to current user, show remove delegation button-->
                                 {{end}} {{if not (eq $note.Owner $.Username)}}
                                 <button
                                     class="w3-btn w3-red"
