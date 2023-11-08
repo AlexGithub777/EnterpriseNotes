@@ -2,18 +2,32 @@
 
 # Introduction
 
-This aim of this project is to create a basic notes application - based off [pwrcost](https://github.com/yonush/pwrcost). It uses mostly built-in Go's packages such as `net/http`, `database/sql`, `strconv`, `html/template` and uses third party packages `gorilla/mux` for the router, `jackc/pgx` for the PostegreSQL driver and `icza/session ` for session manangement. 
+This aim of this project is to create a basic notes application - based off [pwrcost](https://github.com/yonush/pwrcost). It uses mostly built-in Go packages such as `net/http`, `database/sql`, `strconv`, `html/template` and uses third party packages `gorilla/mux` for the router, `jackc/pgx` for the PostegreSQL driver and `icza/session ` for session manangement.
 
-This application was created to demonstrate the following:</p>
+## This application requirements are as follows:</p>
+
+> The Enterprise Notes application is an online service to users within an enterprise. The users will need to setup
+> a new account within the Enterprise Note service. All users can create a note; the user who created a note is
+> the owner of that note. All users have access to the list of registered users. A note can be shared with other
+> users providing either read access or read/write access, which is set per user.
+> Apart from metadata required to administer the note/task;
+
+-   A note just contains text (embedded media like video, images, etc is not required).
+-   A note should have a name to aid with identification of the note.
+-   The note should contain a date & time of creation.
+-   And include a date & time of completion if it is a task.
+-   The note/task should include a status flag to indicate if the task is none/in
+    progress/completed/cancelled/delegated.
+-   User id or name of the user the note was delegated to.
 
 -   Go HTML templates with [W3.CSS](https://www.w3schools.com/w3css/w3css_examples.asp) stylesheet
 -   RESTful API with gorilla/mux
 -   Datastorage using PostgreSQL - tested with 15.4.1
--   Session management with icza/session 
+-   Session management with icza/session
 -   Create, Read, Update and Delete Notes/Tasks
--   Searching for Notes/Tasks based on attributes - Validation for Text Patterns from assignment brief was attempted, but not executed in application. 
+-   Searching for Notes/Tasks based on attributes - Validation for Text Patterns from assignment brief was attempted, but not executed in application.
 -   Share function for Notes/Tasks
--   Count occurrences of specified text snippets within a single Note/Task - Validation for Text Patterns from assignment brief was attempted, but not executed in application. 
+-   Count occurrences of specified text snippets within a single Note/Task - Validation for Text Patterns from assignment brief was attempted, but not executed in application.
 
 The application is standalone requiring no additional WAMP/LAMP dependencies. It has been built and tested on Windows. If the application requires rebuilding, there are two batch files provided. The rebuild assumes there is an existing Go installation on the host computer. The provided batch files will download the required 3rd party packages for the build process.
 
