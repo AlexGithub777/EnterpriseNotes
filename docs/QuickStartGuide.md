@@ -18,11 +18,11 @@ Before you begin, make sure you have the following prerequisites:
 
     - SSH: Run the following command to clone your application repository:
         ```
-        git clone git@github.com/yourusername/your-repo.git
+        git clone git@github.com/AlexGithub777/notes.git
         ```
     - HTTPS: If you're using HTTPS, use this command instead:
         ```
-        git clone https://github.com/yourusername/your-repo.git
+        git clone https://github.com/AlexGithub777/notes.git
         ```
 
 2. **Navigate to the Application Directory**: (cd your-repo)
@@ -46,14 +46,11 @@ Before you begin, make sure you have the following prerequisites:
 -   Build the application using the `go build` command. You have two options:
     -   Without vendored packages (if your dependencies are not vendored):
         ```
-        go build -o notes .
+        ./buildpkg.cmd
         ```
     -   With vendored packages:
         ```
-        export GO111MODULE="on"
-        export GOFLAGS="-mod=vendor"
-        go mod vendor
-        go build -o notes .
+        ./buildvendor.cmd
         ```
 
 5. **Run the Application**:
