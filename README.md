@@ -10,6 +10,16 @@ This application has been designed to run on any operating system and be accessi
 
 [Click here to view Quick Start Guide](docs/QuickStartGuide.md)
 
+## Additional documentation
+
+[Click here to view the Data Model](docs/enterprise_notes_data_model.png)
+
+[Click here to view Data dictionary](docs/enterprise_notes_data_dictionary.xlsx)
+
+[Click here to view a discussion about potential client-sided rendering implementation](docs/Client-side_rendering_discussion.pdf)
+
+[Click here to view Datastore decisions](docs/Datastore_decisions.pdf)
+
 ## This application requirements are as follows:
 
 The Enterprise Notes application is an online service to users within an enterprise. The users will need to setup
