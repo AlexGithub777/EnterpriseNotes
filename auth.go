@@ -2,6 +2,7 @@
 package main
 
 import (
+	// Import statements
 	"database/sql"
 	"html/template"
 	"log"
@@ -12,6 +13,9 @@ import (
 )
 
 func (a *App) registerHandler(w http.ResponseWriter, r *http.Request) {
+	// Handle GET requests by serving the registration form
+    // Extract user input and check for existing users
+    // Hash the password and insert the new user into the database
     if r.Method != "POST" {
         http.ServeFile(w, r, "tmpl/register.html")
         return
@@ -100,6 +104,11 @@ func (a *App) registerHandler(w http.ResponseWriter, r *http.Request) {
 
 
 func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
+	// Log GET requests and handle POST requests for login
+    // Serve the login page with an optional message
+    // Retrieve user input and query the database for matching user
+    // Compare hashed password and handle authentication
+    // Create a new session on successful login
     log.Printf("Method %s", r.Method)
 
     // Check for a message cookie
@@ -185,7 +194,7 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
-	// Get the current session variables
+	// Get the current session variables, log out the user, and redirect to login
 	s := session.Get(r)
 	username := s.CAttr("username").(string)
 	log.Printf("User %s has been logged out", username)
@@ -199,6 +208,8 @@ func (a *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) isAuthenticated(w http.ResponseWriter, r *http.Request) {
+	// Check if the user is authenticated based on session attributes
+    // Redirect to login page if not authenticated
 	authenticated := false
 
 	sess := session.Get(r)
@@ -220,7 +231,7 @@ func (a *App) isAuthenticated(w http.ResponseWriter, r *http.Request) {
 
 
 func (a *App) setupAuth() {
-	// Initialize the session manager - this is a global
+	// Initialize the session manager with global settings
 	// For testing purposes, we want cookies to be sent over HTTP too (not just HTTPS)
 	// refer to the auth.go for the authentication handlers using the sessions
 	session.Global.Close()
