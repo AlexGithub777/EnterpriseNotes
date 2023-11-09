@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// retrieveNotes fetches notes for a given username including shared users' data.
 func (a *App) retrieveNotes(username string) ([]Note, error) {
 	// Prepare the SQL statement for fetching notes and shared users' data
 	query := `
@@ -65,6 +66,7 @@ func (a *App) retrieveNotes(username string) ([]Note, error) {
 	return notes, nil
 }
 
+// retrieveDelegatedNotes fetches notes delegated to a given username.
 func (a *App) retrieveDelegatedNotes(username string) ([]Note, error) {
     // Prepare the SQL statement for fetching delegated notes
     query := `
@@ -114,7 +116,7 @@ func (a *App) retrieveDelegatedNotes(username string) ([]Note, error) {
     return delegatedNotes, nil
 }
 
-
+// retrieveSharedNotesWithPrivileges fetches shared notes for a given username with privileges.
 func (a *App) retrieveSharedNotesWithPrivileges(username string) ([]Note, error) {
 	// Prepare the SQL statement for fetching shared notes with privileges
 	query := `
@@ -164,6 +166,7 @@ func (a *App) retrieveSharedNotesWithPrivileges(username string) ([]Note, error)
 	return sharedNotes, nil
 }
 
+// getAllUsers fetches all users except the owner.
 func (a *App) getAllUsers(ownerUsername string) ([]User, error) {
 	// Prepare the SQL statement for fetching all users except the owner
 	query := "SELECT username FROM users WHERE username != $1"
@@ -196,7 +199,7 @@ func (a *App) getAllUsers(ownerUsername string) ([]User, error) {
 	return users, nil
 }
 
-
+// getSharedUsersForNote retrieves shared users and their privileges for a given noteID.
 func (a *App) getSharedUsersForNote(noteID int) ([]UserShare, error) {
     // Initialize a slice to store the shared users
     var sharedUsers []UserShare
@@ -243,7 +246,7 @@ func (a *App) getSharedUsersForNote(noteID int) ([]UserShare, error) {
     return sharedUsers, nil
 }
 
-
+// updateNoteInDatabase updates note fields in the database.
 func (a *App) updateNoteInDatabase(note Note) error {
 	// Prepare the SQL statement for updating note fields
 	updateQuery := `
@@ -294,7 +297,7 @@ func (a *App) updateNoteInDatabase(note Note) error {
 	return nil
 }
 
-
+// insertNoteIntoDatabase inserts a new note into the database.
 func (a *App) insertNoteIntoDatabase(note Note) error {
 	// Prepare the SQL statement for inserting a new note
 	insertQuery := `
@@ -328,9 +331,9 @@ func (a *App) insertNoteIntoDatabase(note Note) error {
 	return nil
 }
 
-
+// searchNotesInDatabase searches notes in the database based on a search query.
 func (a *App) searchNotesInDatabase(searchQuery string, username string) ([]Note, error) {
-    // Attempted to validate search query, would alter search results so didn't keep
+    // // isValidSearchQuery checks if the search query is valid. would alter search results so didn't keep
 	/*if !isValidSearchQuery(searchQuery) {
         fmt.Printf("Invalid search query")
         return []Note{}, nil
@@ -418,6 +421,7 @@ func isValidSearchQuery(textPattern string) bool {
 }
 */
 
+// RemoveDelegation removes delegation from a note in the database.
 func (a *App) RemoveDelegation(noteID int) error {
 	// Prepare the SQL statement for removing delegation
 	query := "UPDATE notes SET noteDelegation = NULL, noteStatus = NULL WHERE id = $1"
@@ -436,7 +440,7 @@ func (a *App) RemoveDelegation(noteID int) error {
 	return nil
 }
 
-
+// getUnsharedUsersForNote retrieves unshared users for a given noteID and username.
 func (a *App) getUnsharedUsersForNote(noteID int, username string) ([]User, error) {
 	// Initialize a slice to store unshared users
 	var unsharedUsers []User
@@ -483,7 +487,7 @@ func (a *App) getUnsharedUsersForNote(noteID int, username string) ([]User, erro
 	return unsharedUsers, nil
 }
 
-
+// deleteNoteFromDatabase deletes a note from the database by ID.
 func (a *App) deleteNoteFromDatabase(noteID int) error {
     // Prepare the SQL statement for deleting a note by ID
     query := "DELETE FROM notes WHERE id = $1"
@@ -502,6 +506,7 @@ func (a *App) deleteNoteFromDatabase(noteID int) error {
     return nil
 }
 
+// shareNoteWithUser shares a note with a user in the database.
 func (a *App) shareNoteWithUser(noteID int, sharedUsername string, privileges string) error {
     // Prepare the SQL statement for checking if the shared user exists
     checkUserQuery := "SELECT username FROM users WHERE username = $1"
@@ -551,6 +556,7 @@ func (a *App) shareNoteWithUser(noteID int, sharedUsername string, privileges st
     return err
 }
 
+// removeSharedNoteFromUser removes a shared note from a user in the database.
 func (a *App) removeSharedNoteFromUser(username string, noteID string) error {
     // Prepare the SQL statement for removing the shared note from a user
     query := "DELETE FROM user_shares WHERE username = $1 AND note_id = $2"
@@ -569,6 +575,7 @@ func (a *App) removeSharedNoteFromUser(username string, noteID string) error {
     return nil
 }
 
+// updateUserPrivileges updates user privileges for a shared note in the database.
 func (a *App) updateUserPrivileges(selectedUsername, updatedPrivileges, noteID string) error {
     // Prepare the SQL statement for updating user privileges
     query := "UPDATE user_shares SET privileges = $1 WHERE username = $2 AND note_id = $3"
@@ -587,7 +594,7 @@ func (a *App) updateUserPrivileges(selectedUsername, updatedPrivileges, noteID s
     return nil
 }
 
-
+// findTextInNote searches for a text pattern in a note and returns results.
 func (a *App) findTextInNote(noteID int, searchPattern string) ([]SearchResult, error) {
     results := []SearchResult{}
 
@@ -633,7 +640,7 @@ func countOccurrences(text, searchPattern string) int {
     return count
 }
 
-
+// getNoteByID retrieves a note from the database by ID.
 func (a *App) getNoteByID(noteID int) (*Note, error) {
     query := "SELECT id, title, description, noteType, taskCompletionTime, taskCompletionDate, noteStatus, noteDelegation, owner FROM notes WHERE id = $1"
     row := a.db.QueryRow(query, noteID)
