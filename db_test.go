@@ -10,106 +10,88 @@ import (
 	// Import the package where your `App` type is defined
 	// Import the package where your `Note` and `UserShare` types are defined
 )
+
 func TestRetrieveNotes_Success(t *testing.T) {
-    // Create a new SQL mock
-    db, mock, err := sqlmock.New()
-    if err != nil {
-        t.Fatalf("An error occurred while opening a stub database connection: %v", err)
-    }
-    defer db.Close()
+	// Create a new SQL mock
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("An error occurred while opening a stub database connection: %v", err)
+	}
+	defer db.Close()
 
-    // Create the App instance and set the database connection to the mock
-    a := App{db: db}
+	// Create the App instance and set the database connection to the mock
+	a := App{db: db}
 
-    // Define the expected timestamp values
-    
-    noteCreatedTime := time.Date(2023, 11, 1, 15, 6, 20, 935951100, time.UTC)
-    taskCompletionTime := sql.NullString{String: "12:00:00", Valid: true}
-    taskCompletionDate := sql.NullString{String: "2023-11-01", Valid: true}
+	// Define the expected timestamp values
+	noteCreatedTime := time.Date(2023, 11, 1, 15, 6, 20, 935951100, time.UTC)
 
-    // Define the expected rows to be returned by the mock
-    rows := sqlmock.NewRows([]string{
-        "id", "title", "noteType", "description", "noteCreated",
-        "taskCompletionTime", "taskCompletionDate", "noteStatus", "noteDelegation", "owner",
-        "FTSText", "username", "privileges",
-    }).AddRow(
-        1, "Test Note", "Type1", "Test Description", noteCreatedTime,
-        taskCompletionTime,
-        taskCompletionDate,
-        sql.NullString{String: "Status1", Valid: true},
-        sql.NullString{String: "Delegation1", Valid: true},
-        "user1",
-        sql.NullString{String: "Test FTSText", Valid: true},
-        sql.NullString{String: "shared_user1", Valid: true},
-        sql.NullString{String: "editor", Valid: true},
-    ).AddRow(
-        2, "Test Note 2", "Type2", "Test Description 2", noteCreatedTime,
-        sql.NullString{String: "13:00:00", Valid: true},
-        sql.NullString{String: "2023-11-02", Valid: true},
-        sql.NullString{String: "Status2", Valid: true},
-        sql.NullString{String: "Delegation2", Valid: true},
-        "user2",
-        sql.NullString{String: "Test FTSText 2", Valid: true},
-        sql.NullString{String: "shared_user2", Valid: true},
-        sql.NullString{String: "viewer", Valid: true},
-    )
+	// Define the expected rows to be returned by the mock
+	rows := sqlmock.NewRows([]string{
+		"id", "title", "noteType", "description", "noteCreated", "taskCompletionTime", "taskCompletionDate", "noteStatus", "noteDelegation", "owner", "username", "privileges",
+	}).AddRow(
+		1, "Test Note", "Type1", "Test Description", noteCreatedTime,
+		sql.NullString{String: "12:00:00", Valid: true},
+		sql.NullString{String: "2023-11-01", Valid: true},
+		sql.NullString{String: "Status1", Valid: true},
+		sql.NullString{String: "Delegation1", Valid: true},
+		"user1",
+		sql.NullString{String: "shared_user1", Valid: true},
+		sql.NullString{String: "editor", Valid: true},
+	)
 
-    // Expect the query with a specific username
-    mock.ExpectPrepare("SELECT .* FROM notes n .*").ExpectQuery().
-        WithArgs("user1").
-        WillReturnRows(rows)
+	// Expect the query with a specific username
 
-    // Call the function to retrieve notes
-    notes, err := a.retrieveNotes("user1")
-    if err != nil {
-        t.Errorf("Expected no error, but got %v", err)
-    }
+	query := `
+		SELECT
+		n.id, n.title, n.noteType, n.description, n.noteCreated, n.taskCompletionTime, n.taskCompletionDate, n.noteStatus, n.noteDelegation, n.owner, u.username, us.privileges
+		FROM
+			notes n
+		LEFT JOIN
+			user_shares us ON n.id = us.note_id
+		LEFT JOIN
+			users u ON us.username = u.username
+		WHERE
+			n.owner = ?
+	`
 
-    // Define the expected result
-    expectedNotes := []Note{
-        {
-            ID:               1,
-            Title:            "Test Note",
-            NoteType:         "Type1",
-            Description:      "Test Description",
-            NoteCreated:      noteCreatedTime,
-            TaskCompletionTime: taskCompletionTime,
-            TaskCompletionDate: taskCompletionDate,
-            NoteStatus:        sql.NullString{String: "Status1", Valid: true},
-            NoteDelegation:    sql.NullString{String: "Delegation1", Valid: true},
-            Owner:            "user1",
-            FTSText:          sql.NullString{String: "Test FTSText", Valid: true},
-            SharedUsers: []UserShare{
-                {Username: sql.NullString{String: "shared_user1", Valid: true}, Privileges: sql.NullString{String: "editor", Valid: true}},
-            },
-        },
-        {
-            ID:               2,
-            Title:            "Test Note 2",
-            NoteType:         "Type2",
-            Description:      "Test Description 2",
-            NoteCreated:      noteCreatedTime,
-            TaskCompletionTime: sql.NullString{String: "13:00:00", Valid: true},
-            TaskCompletionDate: sql.NullString{String: "2023-11-02", Valid: true},
-            NoteStatus:        sql.NullString{String: "Status2", Valid: true},
-            NoteDelegation:    sql.NullString{String: "Delegation2", Valid: true},
-            Owner:            "user2",
-            FTSText:          sql.NullString{String: "Test FTSText 2", Valid: true},
-            SharedUsers: []UserShare{
-                {Username: sql.NullString{String: "shared_user2", Valid: true}, Privileges: sql.NullString{String: "viewer", Valid: true}},
-            },
-        },
-    }
+	mock.ExpectPrepare(query).ExpectQuery().
+		WithArgs("user1").
+		WillReturnRows(rows)
 
-    // Check if the expected result matches the actual result
-    if !reflect.DeepEqual(notes, expectedNotes) {
-        t.Errorf("Expected notes to be %v, but got %v", expectedNotes, notes)
-    }
+	// Call the function to retrieve notes
+	notes, err := a.retrieveNotes("user1")
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
 
-    // Ensure all expectations were met
-    if err := mock.ExpectationsWereMet(); err != nil {
-        t.Errorf("Unfulfilled expectations: %s", err)
-    }
+	// Define the expected result
+	expectedNotes := []Note{
+		{
+			ID:               1,
+			Title:            "Test Note",
+			NoteType:         "Type1",
+			Description:      "Test Description",
+			NoteCreated:      noteCreatedTime,
+			TaskCompletionTime: sql.NullString{String: "12:00:00", Valid: true},
+			TaskCompletionDate: sql.NullString{String: "2023-11-01", Valid: true},
+			NoteStatus:        sql.NullString{String: "Status1", Valid: true},
+			NoteDelegation:    sql.NullString{String: "Delegation1", Valid: true},
+			Owner:            "user1",
+			SharedUsers: []UserShare{
+				{Username: sql.NullString{String: "shared_user1", Valid: true}, Privileges: sql.NullString{String: "editor", Valid: true}},
+			},
+		},
+	}
+
+	// Check if the expected result matches the actual result
+	if !reflect.DeepEqual(notes, expectedNotes) {
+		t.Errorf("Expected notes to be %v, but got %v", expectedNotes, notes)
+	}
+
+	// Ensure all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Unfulfilled expectations: %s", err)
+	}
 }
 
 func TestRetrieveSharedNotesWithPrivileges_Success(t *testing.T) {
@@ -343,7 +325,7 @@ func TestRemoveDelegation(t *testing.T) {
     noteID := 123 // Replace with the appropriate noteID
 
     // Define the expected SQL query and result using sqlmock
-    expectedQuery := "UPDATE notes SET noteDelegation = NULL WHERE id = ?"
+    expectedQuery := "UPDATE notes SET noteDelegation = NULL, noteStatus = NULL WHERE id = $?"
     mock.ExpectPrepare(expectedQuery).ExpectExec().
         WithArgs(noteID).
         WillReturnResult(sqlmock.NewResult(0, 1)) // 1 row affected
