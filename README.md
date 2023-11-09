@@ -43,6 +43,8 @@ The application is standalone requiring no additional WAMP/LAMP dependencies. It
 
 -   Session management is not handled by Go's `net/http`. This was adressed using the third party package `icza/session`.
 
+-   User input length validation was not specifically mentioned, but has been handled in the application. This was done by preventing a note being entered into the database if it's title or description exceeds 256 characters in length, restricts search queries to a maximum of 256 characters and enforces a limit of 50 characters for 'Find in Text' queries.
+
 ## Language used
 
 This application uses the Go programming language - where the latest was [Go 1.21](https://go.dev/dl/) as of writing this application. If you do not have Go installed on your system, you can acquire a copy from [Go.dev](https://go.dev/dl/). The go1.21.0.windows-amd64.msi was used to build this application.
