@@ -122,7 +122,6 @@ func (a *App) retrieveSharedNotesWithPrivileges(username string) ([]Note, error)
 		FROM notes n
 		INNER JOIN user_shares us ON n.id = us.note_id
 		WHERE us.username = $1
-		ORDER BY n.id
 	`
 
 	stmt, err := a.db.Prepare(query)
