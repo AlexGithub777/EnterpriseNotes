@@ -16,7 +16,11 @@ import (
 
 
 func (a *App) Initialize() {
-    // Create the database connection
+    // Initialize sets up the application by:
+	// - Creating the database connection
+	// - Checking data import status and importing demo data if needed
+	// - Setting up authentication
+	// - Initializing the application's routes
     db, err := setupDatabase()
     if err != nil {
         log.Fatal(err)
@@ -24,7 +28,7 @@ func (a *App) Initialize() {
     a.db = db
 
 	
-	//check data import status
+	// Check data import status
 	_, err = os.Stat("./imported")
 	if os.IsNotExist(err) {
 		log.Println("--- Importing demo data")
@@ -48,7 +52,8 @@ func (a *App) Initialize() {
     }
 }
 
-
+// Run starts the HTTP server on the specified address or the default if not provided.
+// It handles graceful shutdown on interrupt signal.
 func (a *App) Run(addr string) {
 	if addr != "" {
 		a.bindport = addr
