@@ -74,6 +74,8 @@ The application uses the following Go packages to build;
 
 This version application requires a separate database to function - PostgreSQL. Demonstration Notes/Tasks are imported from a local CSV file in the local data folder. This will be imported when the application is run for the first time. Thereafter the application will use the database each time it is executed.
 
+Two administrative user accounts are also only automatically generated when the application is run for the first time. The first account uses the username "mydog7" and the second "BIGCAT", both with the password "admin".
+
 ## Sample screens
 
 ![Creating](statics/images/create.png "create")
