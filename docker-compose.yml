@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  notes-db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: notes
+    command: ["postgres", "-c", "port=5433"]
+    ports:
+      - "5433:5433"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d notes -p 5433"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  app:
+    build: .
+    depends_on:
+      notes-db:
+        condition: service_healthy
+    environment:
+      PGHOST: notes-db 
+      PGPORT: 5433
+      PGUSER: postgres
+      PGPASSWORD: "postgres"  # Fixed: was empty, now matches DB password
+      PGDATABASE: notes
+      PORT: 60
+    ports:
+      - "60:60"
+    restart: on-failure
+
+volumes:
+  postgres_data:
