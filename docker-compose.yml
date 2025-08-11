@@ -18,22 +18,30 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+    networks:
+      - edms_app-network
 
-  app:
+  notes-app:
     build: .
     depends_on:
       notes-db:
         condition: service_healthy
     environment:
-      PGHOST: notes-db 
+      PGHOST: notes-db
       PGPORT: 5433
       PGUSER: postgres
-      PGPASSWORD: "postgres"  # Fixed: was empty, now matches DB password
+      PGPASSWORD: "postgres"
       PGDATABASE: notes
       PORT: 60
     ports:
       - "60:60"
     restart: on-failure
+    networks:
+      - edms_app-network
 
 volumes:
   postgres_data:
+
+networks:
+  edms_app-network:
+    external: true
